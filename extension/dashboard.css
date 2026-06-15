@@ -1,8 +1,33 @@
-.title {
-    font-size: 16px;
-    font-family: "Rubik", sans-serif;
+.topbar {
+    display: flex;                  /* by default, divs are vertical. this makes it horizontal */
+    justify-content: space-between; /* shoves icons right. in a flex row, this controls spacing along the row */
+    align-items: center;            /* vertical position */
+    padding: 16px 24px;             /* padding: top-bottom and left-right*/
 }
 
-#download-button {
-    size: 10%;
+body {                              /* entire <body> tag*/
+    width: 800px;
+    margin: 0;
+    font-family: "Roboto", sans-serif;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+}
+
+h1 {
+    font-weight: 900;
+    font-size: 40px;
+    margin: 0;                          /* h1 has big default margins so we remove */
+    color: #232443;
+}
+
+.version {
+    font-weight: 400;
+    font-size: 14;
+    color: #232443BF;
+    opacity: 75%;
 }

@@ -232,11 +232,11 @@ def mal_callback():
 def mal_me():
     return jsonify(get_my_info())
 
-@app.route("/mal/me/animelist")
+@app.route("/mal/me/animelist", methods=['GET'])
 def mal_animelist():
     return jsonify(get_animelist())
 
-@app.route("/mal/me/mangalist")
+@app.route("/mal/me/mangalist", methods=['GET'])
 def mal_mangalist():
     return jsonify(get_mangalist())
 
