@@ -2,19 +2,19 @@
     display: flex;                  /* by default, divs are vertical. this makes it horizontal */
     justify-content: space-between; /* shoves icons right. in a flex row, this controls spacing along the row */
     align-items: center;            /* vertical position */
-    padding: 16px 24px;             /* padding: top-bottom and left-right*/
+    padding: 10px 14px;             /* padding: top-bottom and left-right*/
 }
 
 body {                              /* entire <body> tag*/
-    width: 800px;
+    width: 400px;
     margin: 0;
     font-family: "Roboto", sans-serif;
     background: #EEEFF6;
 }
 
 .icon-btn {
-    width: 50px;
-    height: 50px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     border: none;
     background-color: #BCBDDC;
@@ -26,38 +26,111 @@ body {                              /* entire <body> tag*/
 
 h1 {
     font-weight: 900;
-    font-size: 40px;
+    font-size: 22px;
     margin: 0;                          /* h1 has big default margins so we remove */
     color: #232443;
 }
 
 .version {
     font-weight: 400;
-    font-size: 14;
+    font-size: 11px;
     color: #232443BF;
     opacity: 75%;
     position: relative;
-    top: 6px;               /* push a bit down from the top */
+    top: 4px;               /* push a bit down from the top */
 }
 
 .brand {
     display: flex;          /* flex: div becomes a shelf, everything in it is horizontal*/
     align-items: baseline;  /* line up the text bottoms (title baseline)*/
-    gap: 4px;
+    gap: 3px;
 }
 
 .icons {
     display: flex;
-    gap: 12px;
+    gap: 8px;
 }
 
 .icon-btn.material-symbols-outlined {
     color: #353664;
-    font-size: 33px;
+    font-size: 22px;
     font-variation-settings: 'FILL' 0;  /*profile and gear icons*/
 }
 
 .theme-btn.material-symbols-outlined {
-    font-size: 33px;
+    font-size: 22px;
     font-variation-settings: 'FILL' 1;
+}
+
+.discord-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background-color: #DEDEED33;
+    border-radius: 12px;            /* rounded corners */
+    padding: 11px;                  /* inner part so content isnt jammed to the edge */
+    margin: 0 14px;                 /* 0=top/bottom, 14=left/right */
+}
+
+.strip-info {
+    flex: 1;                        /* grow to fill the middle */
+}
+
+.strip-meta {
+    display: flex;
+    gap: 5px;
+}
+
+.strip-cover {
+    width: 40px;
+    height: 53px;
+    border-radius: 4px;
+    object-fit: cover;          /* crop image to fill without stretching*/
+}
+
+.strip-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #232443;
+    margin: 0 0 2px 0;
+}
+
+.strip-subtitle {
+    font-size: 9px;
+    font-weight: 900;
+    color: #23244380;
+    margin: 0 0 5px 0;
+}
+
+.strip-pill {
+    min-width: 38px;
+    height: 17px;
+    padding: 0 7px;
+    box-sizing: border-box;     /* padding counts INSIDE the width, not added on top */
+    background-color: #DEDEED;
+    border-radius: 25px;
+    font-size: 9px;
+    font-weight: 900;
+    color: #797BB9;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.strip-pill .material-symbols-outlined {
+    font-size: 11px;
+    color: #F5C518;                     /* gold star */
+    font-variation-settings: 'FILL' 1;  /* solid, not outline */
+}
+
+.strip-status {
+    background-color: #59D97F;
+    color: #F0F1F7;
+    font-weight: 900;
+    font-size: 12px;
+    border-radius: 25px;
+    padding: 5px 13px;
 }
