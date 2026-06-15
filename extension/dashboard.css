@@ -9,13 +9,19 @@ body {                              /* entire <body> tag*/
     width: 800px;
     margin: 0;
     font-family: "Roboto", sans-serif;
+    background: #EEEFF6;
 }
 
 .icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     border: none;
+    background-color: #BCBDDC;
+}
+
+.theme-btn {
+    background-color: #DEDEED;
 }
 
 h1 {
@@ -30,4 +36,28 @@ h1 {
     font-size: 14;
     color: #232443BF;
     opacity: 75%;
+    position: relative;
+    top: 6px;               /* push a bit down from the top */
+}
+
+.brand {
+    display: flex;          /* flex: div becomes a shelf, everything in it is horizontal*/
+    align-items: baseline;  /* line up the text bottoms (title baseline)*/
+    gap: 4px;
+}
+
+.icons {
+    display: flex;
+    gap: 12px;
+}
+
+.icon-btn.material-symbols-outlined {
+    color: #353664;
+    font-size: 33px;
+    font-variation-settings: 'FILL' 0;  /*profile and gear icons*/
+}
+
+.theme-btn.material-symbols-outlined {
+    font-size: 33px;
+    font-variation-settings: 'FILL' 1;
 }
