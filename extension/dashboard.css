@@ -10,6 +10,12 @@ body {                              /* entire <body> tag*/
     margin: 0;
     font-family: "Roboto", sans-serif;
     background: #EEEFF6;
+    animation: pop-in 0.22s ease;   /* gentle fade + rise when the popup opens */
+}
+
+@keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .icon-btn {
@@ -19,10 +25,23 @@ body {                              /* entire <body> tag*/
     border: none;
     background-color: #BCBDDC;
     cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.icon-btn:hover {
+    background-color: #9B9CCA;
+}
+
+.icon-btn:active {
+    transform: scale(0.92);
 }
 
 .theme-btn {
     background-color: #DEDEED;
+}
+
+.theme-btn:hover {
+    background-color: #BCBDDC;
 }
 
 h1 {
@@ -89,6 +108,12 @@ h1 {
     height: 53px;
     border-radius: 8px;
     object-fit: cover;          /* crop image to fill without stretching*/
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.strip-cover:hover {
+    transform: scale(1.05);
 }
 
 .strip-title {
@@ -157,6 +182,11 @@ h1 {
     font-weight: 900;
     color: #232443;
     padding: 0;
+    transition: opacity 0.15s ease;
+}
+
+.mode-switch:hover {
+    opacity: 0.67;
 }
 
 .mode-switch .material-symbols-outlined {
@@ -182,6 +212,11 @@ h1 {
     font-weight: 900;
     color: #232443;
     padding: 0;
+    transition: opacity 0.15s ease;
+}
+
+.status-select:hover {
+    opacity: 0.67;
 }
 
 .status-select .material-symbols-outlined {
@@ -202,6 +237,16 @@ h1 {
     object-fit: cover;
     border-radius: 8px;
     display: block;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.poster:hover {
+    transform: scale(1.05);
+}
+
+.poster:active {
+    transform: scale(0.98);
 }
 
 .footer {
@@ -220,6 +265,15 @@ h1 {
     border-radius: 25px;
     padding: 4px 4px 4px 20px;     /* lots of room on the left for the label, tight on the right for the knob */
     cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.ghost-toggle:hover {
+    background-color: #9AA3A0;      /* track darkens slightly on hover */
+}
+
+.ghost-toggle:active {
+    transform: scale(0.97);         /* subtle press */
 }
 
 .ghost-label {
@@ -236,9 +290,26 @@ h1 {
     display: flex;                 /* center the icon inside the knob (insides*/
     align-items: center;          /* center left to right */
     justify-content: center;      /* center top to bottom */
+    transition: transform 0.2s ease;   /* lets the knob glide */
+}
+
+.ghost-toggle:hover .ghost-knob {
+    transform: translateX(-4px);   /* preview: knob nudges as a hint it slides */
 }
 
 .ghost-knob .material-symbols-outlined {
     font-size: 18px;
     color: #232443;
+}
+
+.github {
+    transition: transform 0.15s ease;
+}
+
+.github:hover {
+    transform: scale(1.08);
+}
+
+.github:active {
+    transform: scale(0.98)
 }
