@@ -97,6 +97,7 @@ h1 {
     padding: 11px;                  /* inner part so content isnt jammed to the edge */
     margin: 0 14px 14px;            /* top 0, sides 14, bottom 14 */
     box-shadow: 0 3px 10px rgba(35, 36, 67, 0.08);
+    cursor: default;
 }
 
 .strip-info {
@@ -165,6 +166,7 @@ h1 {
     font-size: 12px;
     border-radius: 25px;
     padding: 5px 13px;
+    cursor: default;
 }
 
 
@@ -274,6 +276,11 @@ h1 {
 .mode-switch .material-symbols-outlined {
     font-size: 16px;
     color: #797BB9;
+    transition: transform 0.2s ease;
+}
+
+.mode-switch.manga .material-symbols-outlined {
+    transform: rotate(180deg);
 }
 
 .grid {

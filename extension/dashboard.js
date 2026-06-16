@@ -26,12 +26,63 @@ fetch("http://127.0.0.1:5001/update")
 
 */
 
+function selectStatus(event) {
+  statusText.textContent = event.target.textContent;   // the clicked <li>'s word
+  statusWrap.classList.remove("open");                 // close the menu
+}
+
+function closeMenuOnOutsideClick(event) {               // listens to whole page (any clicks runs it)
+  if (!statusWrap.contains(event.target)) {             // event.target = the thing clicked | check if that is inside dropdown
+    statusWrap.classList.remove("open");             
+  }
+}
+
+// even more css
+const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
+const mangaStatuses = ["Reading", "Completed", "On hold", "Dropped", "Plan to read"]
+
+function fillStatusMenu(statuses) {         // build menu items
+    statusText.textContent = statuses[0];   // reset button to first status
+    statusMenu.innerHTML = "";              // wipe the old <li>'s
+
+    for (const status of statuses) {
+        const li = document.createElement("li");
+        li.textContent = status;
+        li.addEventListener("click", selectStatus);
+        statusMenu.appendChild(li);
+  }
+}
+
 // css
 const statusWrap = document.querySelector(".status-wrap");
 const statusButton = document.querySelector(".status-select");
+const statusText = document.querySelector(".status-text");
+const statusMenu = document.querySelector(".status-menu");
 
 function toggleStatusMenu() {
-    statusWrap.classList.toggle("open");    // classList = list of CSS classes -> open class
+    statusWrap.classList.toggle("open");    // add "open" class to the already existing classes of statusWrap
 }
 
 statusButton.addEventListener("click", toggleStatusMenu);
+
+// more css
+const modeSwitch = document.querySelector(".mode-switch")
+const modeText = document.querySelector(".mode-text")
+
+function toggleMode() {
+    modeSwitch.classList.toggle("manga");
+
+    if (modeSwitch.classList.contains("manga")) {
+        modeText.textContent = "Manga"
+        fillStatusMenu(mangaStatuses);
+    }
+
+    else {
+        modeText.textContent = "Anime"
+        fillStatusMenu(animeStatuses);
+    }
+}
+
+modeSwitch.addEventListener("click", toggleMode);
+fillStatusMenu(animeStatuses);
+document.addEventListener("click", closeMenuOnOutsideClick)
