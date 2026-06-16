@@ -18,6 +18,7 @@ body {                              /* entire <body> tag*/
     border-radius: 50%;
     border: none;
     background-color: #BCBDDC;
+    cursor: pointer;
 }
 
 .theme-btn {
@@ -71,6 +72,7 @@ h1 {
     border-radius: 12px;            /* rounded corners */
     padding: 11px;                  /* inner part so content isnt jammed to the edge */
     margin: 0 14px;                 /* 0=top/bottom, 14=left/right */
+    box-shadow: 0 3px 10px rgba(35, 36, 67, 0.08);
 }
 
 .strip-info {
@@ -85,7 +87,7 @@ h1 {
 .strip-cover {
     width: 40px;
     height: 53px;
-    border-radius: 4px;
+    border-radius: 5px;
     object-fit: cover;          /* crop image to fill without stretching*/
 }
 
@@ -133,4 +135,71 @@ h1 {
     font-size: 12px;
     border-radius: 25px;
     padding: 5px 13px;
+}
+
+.panel {
+    background-color: #DEDEED33;
+    border-radius: 12px;            /* rounded corners */
+    padding: 11px;                  /* inner part so content isnt jammed to the edge */
+    margin: 0 14px;                 /* 0=top/bottom, 14=left/right */
+    box-shadow: 0 3px 10px rgba(35, 36, 67, 0.08);
+}
+
+.mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;               /* gap between icon and word */
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    color: #232443;
+    padding: 0;
+}
+
+.mode-switch .material-symbols-outlined {
+    font-size: 16px;
+    color: #797BB9
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;     /* status to the left, mode to the right */
+    align-items: center;
+}
+
+.status-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    color: #232443;
+    padding: 0;
+}
+
+.status-select .material-symbols-outlined {
+    font-size: 18px;
+    color: #797BB9;
+}
+
+.grid {
+    display: grid;      /* turn box into */
+    grid-template-columns: repeat(4, 1fr);      /* 4 cols*/
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.poster {
+    width: 100%;         /* fill the cols (means '100% of my container' */
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
 }
