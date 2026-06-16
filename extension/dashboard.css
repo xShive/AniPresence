@@ -183,6 +183,10 @@ h1 {
     align-items: center;
 }
 
+.status-wrap {
+    position: relative;     /* anchor point for menu */
+}
+
 .status-select {
     display: inline-flex;
     align-items: center;
@@ -205,6 +209,47 @@ h1 {
 .status-select .material-symbols-outlined {
     font-size: 16px;
     color: #797BB9;
+}
+
+.status-menu {                  /* pattern: position: relative wrapper with position: absolute child */ 
+    position: absolute;         /* float instead of pushing grid down */ 
+    top: 100%;                  /* start below button */
+    left: 0;
+    margin: 6px, 0, 0;
+    padding: 4px;
+    list-style: none;           /* get rid of bullet points */
+    background: #FAFAFD;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(35, 36, 67, 0.18);
+    z-index: 10;
+    min-width: 100px;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.status-wrap.open .status-menu {    /* status menu inside element */
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0)
+}
+
+.status-menu li {
+    font-size: 12px;
+    font-weight: 600;
+    color:#232443;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease;
+}
+
+.status-menu li:hover {
+    background-color:#EEEFF6;
+    font-weight: 900;
 }
 
 .mode-switch {
