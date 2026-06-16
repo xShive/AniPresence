@@ -35,8 +35,8 @@ h1 {
 .version {
     font-weight: 400;
     font-size: 11px;
-    color: #232443BF;
-    opacity: 75%;
+    color: #232443;
+    opacity: 0.55;
     position: relative;
     top: 4px;               /* push a bit down from the top */
 }
@@ -71,7 +71,7 @@ h1 {
     background-color: #DEDEED33;
     border-radius: 12px;            /* rounded corners */
     padding: 11px;                  /* inner part so content isnt jammed to the edge */
-    margin: 0 14px;                 /* 0=top/bottom, 14=left/right */
+    margin: 0 14px 14px;            /* top 0, sides 14, bottom 14 */
     box-shadow: 0 3px 10px rgba(35, 36, 67, 0.08);
 }
 
@@ -87,7 +87,7 @@ h1 {
 .strip-cover {
     width: 40px;
     height: 53px;
-    border-radius: 5px;
+    border-radius: 8px;
     object-fit: cover;          /* crop image to fill without stretching*/
 }
 
@@ -161,7 +161,7 @@ h1 {
 
 .mode-switch .material-symbols-outlined {
     font-size: 16px;
-    color: #797BB9
+    color: #797BB9;
 }
 
 .controls {
@@ -185,7 +185,7 @@ h1 {
 }
 
 .status-select .material-symbols-outlined {
-    font-size: 18px;
+    font-size: 16px;
     color: #797BB9;
 }
 
@@ -202,4 +202,43 @@ h1 {
     object-fit: cover;
     border-radius: 8px;
     display: block;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding: 0 25px;
+}
+
+.ghost-toggle {
+    display: inline-flex;          /* pill only as wide as its contents */
+    align-items: center;
+    gap: 10px;
+    background-color: #A9B0AE;     /* grey-green track */
+    border-radius: 25px;
+    padding: 4px 4px 4px 20px;     /* lots of room on the left for the label, tight on the right for the knob */
+    cursor: pointer;
+}
+
+.ghost-label {
+    font-size: 13px;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.ghost-knob {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;            /* the round knob */
+    background-color: #DEDEED;
+    display: flex;                 /* center the icon inside the knob (insides*/
+    align-items: center;          /* center left to right */
+    justify-content: center;      /* center top to bottom */
+}
+
+.ghost-knob .material-symbols-outlined {
+    font-size: 18px;
+    color: #232443;
 }
