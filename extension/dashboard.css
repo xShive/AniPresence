@@ -1,10 +1,4 @@
-.topbar {
-    display: flex;                  /* by default, divs are vertical. this makes it horizontal */
-    justify-content: space-between; /* shoves icons right. in a flex row, this controls spacing along the row */
-    align-items: center;            /* vertical position */
-    padding: 10px 14px;             /* padding: top-bottom and left-right*/
-}
-
+/* ========== GLOBAL ========== */
 body {                              /* entire <body> tag*/
     width: 400px;
     margin: 0;
@@ -14,8 +8,44 @@ body {                              /* entire <body> tag*/
 }
 
 @keyframes pop-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(6px); }    /* start state */
+    to   { opacity: 1; transform: translateY(0); }      /* end state */
+}
+
+
+/* ========== HEADER ========== */
+.topbar {
+    display: flex;                  /* by default, divs are vertical. this makes it horizontal */
+    justify-content: space-between; /* shoves icons right. in a flex row, this controls spacing along the row */
+    align-items: center;            /* vertical position */
+    padding: 10px 14px;             /* padding: top-bottom and left-right*/
+}
+
+.brand {
+    display: flex;          /* flex: div becomes a shelf, everything in it is horizontal*/
+    align-items: baseline;  /* line up the text bottoms (title baseline)*/
+    gap: 3px;
+}
+
+h1 {
+    font-weight: 900;
+    font-size: 22px;
+    margin: 0;                          /* h1 has big default margins so we remove */
+    color: #232443;
+}
+
+.version {
+    font-weight: 400;
+    font-size: 11px;
+    color: #232443;
+    opacity: 0.55;
+    position: relative;
+    top: 4px;               /* push a bit down from the top */
+}
+
+.icons {
+    display: flex;
+    gap: 8px;
 }
 
 .icon-btn {
@@ -44,33 +74,6 @@ body {                              /* entire <body> tag*/
     background-color: #BCBDDC;
 }
 
-h1 {
-    font-weight: 900;
-    font-size: 22px;
-    margin: 0;                          /* h1 has big default margins so we remove */
-    color: #232443;
-}
-
-.version {
-    font-weight: 400;
-    font-size: 11px;
-    color: #232443;
-    opacity: 0.55;
-    position: relative;
-    top: 4px;               /* push a bit down from the top */
-}
-
-.brand {
-    display: flex;          /* flex: div becomes a shelf, everything in it is horizontal*/
-    align-items: baseline;  /* line up the text bottoms (title baseline)*/
-    gap: 3px;
-}
-
-.icons {
-    display: flex;
-    gap: 8px;
-}
-
 .icon-btn.material-symbols-outlined {
     color: #353664;
     font-size: 22px;
@@ -82,6 +85,8 @@ h1 {
     font-variation-settings: 'FILL' 1;
 }
 
+
+/* ========== DC STRIP ========== */
 .discord-strip {
     display: flex;
     align-items: center;
@@ -162,36 +167,14 @@ h1 {
     padding: 5px 13px;
 }
 
+
+/* ========== PANEL ========== */
 .panel {
     background-color: #DEDEED33;
     border-radius: 12px;            /* rounded corners */
     padding: 11px;                  /* inner part so content isnt jammed to the edge */
     margin: 0 14px;                 /* 0=top/bottom, 14=left/right */
     box-shadow: 0 3px 10px rgba(35, 36, 67, 0.08);
-}
-
-.mode-switch {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;               /* gap between icon and word */
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 900;
-    color: #232443;
-    padding: 0;
-    transition: opacity 0.15s ease;
-}
-
-.mode-switch:hover {
-    opacity: 0.67;
-}
-
-.mode-switch .material-symbols-outlined {
-    font-size: 16px;
-    color: #797BB9;
 }
 
 .controls {
@@ -224,6 +207,30 @@ h1 {
     color: #797BB9;
 }
 
+.mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;               /* gap between icon and word */
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    color: #232443;
+    padding: 0;
+    transition: opacity 0.15s ease;
+}
+
+.mode-switch:hover {
+    opacity: 0.67;
+}
+
+.mode-switch .material-symbols-outlined {
+    font-size: 16px;
+    color: #797BB9;
+}
+
 .grid {
     display: grid;      /* turn box into */
     grid-template-columns: repeat(4, 1fr);      /* 4 cols*/
@@ -248,6 +255,9 @@ h1 {
 .poster:active {
     transform: scale(0.98);
 }
+
+
+/* ========== FOOTER ========== */
 
 .footer {
     display: flex;
