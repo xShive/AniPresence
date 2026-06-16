@@ -1,5 +1,5 @@
-/* const version = chrome.runtime.getManifest().version;
-document.getElementById(".version").textContent = "v" + version;
+const version = chrome.runtime.getManifest().version;
+document.querySelector(".version").textContent = "v" + version;
 
 // fetch is async and returns a promise
 // that promise has a .then() method which takes the data and passes it to the function inside
@@ -24,7 +24,7 @@ fetch("http://127.0.0.1:5001/update")
         document.getElementById("download-button").onclick = openURL;
     })
 
-*/
+
 
 function selectStatus(event) {
   statusText.textContent = event.target.textContent;   // the clicked <li>'s word
