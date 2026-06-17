@@ -91,7 +91,7 @@ document.addEventListener("click", closeMenuOnOutsideClick)
 const themeButton = document.querySelector(".theme-btn");
 
 function toggleTheme() {
-    document.body.classList.toggle("dark");     // flip the .dark class on <body>
+    document.body.classList.toggle("dark");     // add .dark to classlist on <body>
 
     if (document.body.classList.contains("dark")) {
         themeButton.textContent = "light_mode";   // show the sun in dark mode
