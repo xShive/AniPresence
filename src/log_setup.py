@@ -4,6 +4,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from paths import app_data_dir
 
+# ========== Function ==========
 def setup_logging():
     log_location = os.path.join(app_data_dir(), "anipresence.log")
 

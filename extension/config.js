@@ -1,6 +1,6 @@
 const LOCAL_URL = "http://127.0.0.1:5001";
 
-// ========== Miruro Configs ==========
+// ========== Miruro Config ==========
 const MIRURO_CONFIG = {
     watchPathIncludes: "/watch",
     selectors: {
@@ -10,23 +10,19 @@ const MIRURO_CONFIG = {
         cover:        "img[style*='view-transition-name: poster']",
         video:        "video",
     },
-    parseEpisodeTitle: (raw) => {
+    parseEpisodeTitle: function (raw) {
         return raw.includes("· ") ? raw.split("· ")[1].trim() : raw.trim();
-    }
+    },
 };
 
 
 // ========== Site Configs ==========
-// Each entry should have:
-// - watchPathIncludes: string or array of URL fragments that indicate a watch page
-// - selectors: a set of selectors (or arrays of fallback selectors) for scraping
-// - parseEpisodeTitle: function to normalise an episode title string
-// - parseEpisodeNumber: (optional) function to extract an episode number when available
 const SITE_CONFIGS = {
-    "miruro.tv":  MIRURO_CONFIG,
-    "miruro.bz":  MIRURO_CONFIG,
-    "miruro.to":  MIRURO_CONFIG,
-    "miruro.ru":  MIRURO_CONFIG,
+    "miruro.tv": MIRURO_CONFIG,
+    "miruro.bz": MIRURO_CONFIG,
+    "miruro.to": MIRURO_CONFIG,
+    "miruro.ru": MIRURO_CONFIG,
+
     "crunchyroll.com": {
         watchPathIncludes: ["/watch", "/episode-"],
         selectors: {
@@ -36,15 +32,16 @@ const SITE_CONFIGS = {
             cover:        ".bitmovinplayer-poster",
             video:        "video",
         },
-        parseEpisodeTitle: (raw) => {
+        parseEpisodeTitle: function (raw) {
             return raw.includes(" - ") ? raw.split(" - ")[1].trim() : raw.trim();
         },
-        parseEpisodeNumber: (raw) => {
+        parseEpisodeNumber: function (raw) {
             if (!raw) return "";
             const match = raw.trim().match(/^(?:E|Ep(?:isode)?)[\s:]*([0-9]+)/i) || raw.trim().match(/^([0-9]+)/);
             return match ? match[1].trim() : "";
         },
     },
+
     "animepahe.pw": {
         watchPathIncludes: ["/play"],
         selectors: {
@@ -52,13 +49,15 @@ const SITE_CONFIGS = {
             episodeTitle: null,
             episodeNum:   "#episodeMenu",
             cover:        ".anime-poster",
-            video:        "video",      // <iframe src="https://kwik.cx/e/9H5TAmSoQXG5"></iframe> loads kwik.xc injecting the .js
+            video:        "video",      // the player is a kwik.cx iframe that injects kwik.js into kwic.cx
         },
-        parseEpisodeNumber: (raw) => {
+        parseEpisodeNumber: function (raw) {
             if (!raw) return "";
             const match = raw.trim().match(/^(?:E|Ep(?:isode)?)[\s:]*([0-9]+)/i) || raw.trim().match(/^([0-9]+)/);
             return match ? match[1].trim() : "";
         },
-        parseCoverUrl: (url) => url.replace(".th.jpg", ".jpg"),
+        parseCoverUrl: function (url) {
+            return url.replace(".th.jpg", ".jpg");
+        },
     },
 };
