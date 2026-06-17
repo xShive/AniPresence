@@ -1,9 +1,38 @@
+/* ========== Themes ========== */
+:root {                         /* default */
+    --bg:          #EEEFF6;
+    --surface:     #DEDEED33;
+    --text:        #232443;
+    --text-muted:  #797BB9;
+    --pill:        #DEDEED;
+    --btn:         #BCBDDC;
+    --btn-hover:   #9B9CCA;
+    --icon:        #353664;
+    --menu:        #FAFAFD;
+    --menu-hover:  #EEEFF6;
+}
+
+body.dark {                     /* dark values */
+    --bg:          #121221;
+    --surface:     #232443;
+    --text:        #EEEFF6;
+    --text-muted:  #9B9CCA;
+    --pill:        #353664;
+    --btn:         #464886;
+    --btn-hover:   #585BA7;
+    --icon:        #DEDEED;
+    --menu:        #232443;
+    --menu-hover:  #353664;
+}
+
+
 /* ========== GLOBAL ========== */
 body {                              /* entire <body> tag*/
     width: 400px;
     margin: 0;
     font-family: "Roboto", sans-serif;
-    background: #EEEFF6;
+    background: var(--bg);
+    transition: background 0.2s ease;   /* fade when switching theme */
     animation: pop-in 0.22s ease;   /* gentle fade + rise when the popup opens */
 }
 
@@ -31,13 +60,13 @@ h1 {
     font-weight: 900;
     font-size: 22px;
     margin: 0;                          /* h1 has big default margins so we remove */
-    color: #232443;
+    color: var(--text);
 }
 
 .version {
     font-weight: 400;
     font-size: 11px;
-    color: #232443;
+    color: var(--text);
     opacity: 0.55;
     position: relative;
     top: 4px;               /* push a bit down from the top */
@@ -53,13 +82,13 @@ h1 {
     height: 34px;
     border-radius: 50%;
     border: none;
-    background-color: #BCBDDC;
+    background-color: var(--btn);
     cursor: pointer;
     transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 .icon-btn:hover {
-    background-color: #9B9CCA;
+    background-color: var(--btn-hover);
 }
 
 .icon-btn:active {
@@ -67,15 +96,15 @@ h1 {
 }
 
 .theme-btn {
-    background-color: #DEDEED;
+    background-color: var(--pill);
 }
 
 .theme-btn:hover {
-    background-color: #BCBDDC;
+    background-color: var(--btn);
 }
 
 .icon-btn.material-symbols-outlined {
-    color: #353664;
+    color: var(--icon);
     font-size: 22px;
     font-variation-settings: 'FILL' 0;  /*profile and gear icons*/
 }
@@ -92,7 +121,7 @@ h1 {
     align-items: center;
     gap: 10px;
 
-    background-color: #DEDEED33;
+    background-color: var(--surface);
     border-radius: 12px;            /* rounded corners */
     padding: 11px;                  /* inner part so content isnt jammed to the edge */
     margin: 0 14px 14px;            /* top 0, sides 14, bottom 14 */
@@ -125,14 +154,14 @@ h1 {
 .strip-title {
     font-size: 13px;
     font-weight: 900;
-    color: #232443;
+    color: var(--text);
     margin: 0 0 2px 0;
 }
 
 .strip-subtitle {
     font-size: 9px;
     font-weight: 900;
-    color: #23244380;
+    color: var(--text-muted);
     margin: 0 0 5px 0;
 }
 
@@ -141,11 +170,11 @@ h1 {
     height: 17px;
     padding: 0 7px;
     box-sizing: border-box;     /* padding counts INSIDE the width, not added on top */
-    background-color: #DEDEED;
+    background-color: var(--pill);
     border-radius: 25px;
     font-size: 9px;
     font-weight: 900;
-    color: #797BB9;
+    color: var(--text-muted);
 
     display: flex;
     align-items: center;
@@ -155,12 +184,12 @@ h1 {
 
 .strip-pill .material-symbols-outlined {
     font-size: 11px;
-    color: #F5C518;                     /* gold star */
+    color: #F5C518;                     /* gold star (accent, same in both themes) */
     font-variation-settings: 'FILL' 1;  /* solid, not outline */
 }
 
 .strip-status {
-    background-color: #59D97F;
+    background-color: #59D97F;          /* green accent, same in both themes */
     color: #F0F1F7;
     font-weight: 900;
     font-size: 12px;
@@ -172,7 +201,7 @@ h1 {
 
 /* ========== PANEL ========== */
 .panel {
-    background-color: #DEDEED33;
+    background-color: var(--surface);
     border-radius: 12px;            /* rounded corners */
     padding: 11px;                  /* inner part so content isnt jammed to the edge */
     margin: 0 14px;                 /* 0=top/bottom, 14=left/right */
@@ -199,7 +228,7 @@ h1 {
     font-family: inherit;
     font-size: 12px;
     font-weight: 900;
-    color: #232443;
+    color: var(--text);
     padding: 0;
     transition: opacity 0.15s ease;
 }
@@ -210,17 +239,17 @@ h1 {
 
 .status-select .material-symbols-outlined {
     font-size: 16px;
-    color: #797BB9;
+    color: var(--text-muted);
 }
 
-.status-menu {                  /* pattern: position: relative wrapper with position: absolute child */ 
-    position: absolute;         /* float instead of pushing grid down */ 
+.status-menu {                  /* pattern: position: relative wrapper with position: absolute child */
+    position: absolute;         /* float instead of pushing grid down */
     top: 100%;                  /* start below button */
     left: 0;
-    margin: 6px, 0, 0;
+    margin: 6px 0 0;
     padding: 4px;
     list-style: none;           /* get rid of bullet points */
-    background: #FAFAFD;
+    background: var(--menu);
     border-radius: 10px;
     box-shadow: 0 4px 14px rgba(35, 36, 67, 0.18);
     z-index: 10;
@@ -241,7 +270,7 @@ h1 {
 .status-menu li {
     font-size: 12px;
     font-weight: 600;
-    color:#232443;
+    color: var(--text);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -250,7 +279,7 @@ h1 {
 }
 
 .status-menu li:hover {
-    background-color:#EEEFF6;
+    background-color: var(--menu-hover);
     font-weight: 900;
 }
 
@@ -264,7 +293,7 @@ h1 {
     font-family: inherit;
     font-size: 12px;
     font-weight: 900;
-    color: #232443;
+    color: var(--text);
     padding: 0;
     transition: opacity 0.15s ease;
 }
@@ -275,7 +304,7 @@ h1 {
 
 .mode-switch .material-symbols-outlined {
     font-size: 16px;
-    color: #797BB9;
+    color: var(--text-muted);
     transition: transform 0.2s ease;
 }
 
@@ -323,7 +352,7 @@ h1 {
     display: inline-flex;          /* pill only as wide as its contents */
     align-items: center;
     gap: 10px;
-    background-color: #A9B0AE;     /* grey-green track */
+    background-color: #A9B0AE;     /* grey-green track (accent, same in both themes) */
     border-radius: 25px;
     padding: 4px 4px 4px 20px;     /* lots of room on the left for the label, tight on the right for the knob */
     cursor: pointer;
@@ -365,6 +394,7 @@ h1 {
 }
 
 .github {
+    color: var(--text);            /* the svg uses fill="currentColor", so it follows this */
     transition: transform 0.15s ease;
 }
 

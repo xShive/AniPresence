@@ -3,7 +3,7 @@ document.querySelector(".version").textContent = "v" + version;
 
 // fetch is async and returns a promise
 // that promise has a .then() method which takes the data and passes it to the function inside
-fetch("http://127.0.0.1:5001/update")
+/* fetch("http://127.0.0.1:5001/update")
     .then(function(response) {
         return response.json()      // response.json() is async, returs a promise
     })                              // another .then() is needed
@@ -23,7 +23,7 @@ fetch("http://127.0.0.1:5001/update")
         document.getElementById("download-button").textContent = "Download " + latest_version;
         document.getElementById("download-button").onclick = openURL;
     })
-
+    */
 
 
 function selectStatus(event) {
@@ -86,3 +86,18 @@ function toggleMode() {
 modeSwitch.addEventListener("click", toggleMode);
 fillStatusMenu(animeStatuses);
 document.addEventListener("click", closeMenuOnOutsideClick)
+
+// dark mode
+const themeButton = document.querySelector(".theme-btn");
+
+function toggleTheme() {
+    document.body.classList.toggle("dark");     // flip the .dark class on <body>
+
+    if (document.body.classList.contains("dark")) {
+        themeButton.textContent = "light_mode";   // show the sun in dark mode
+    } else {
+        themeButton.textContent = "dark_mode";     // show the moon in light mode
+    }
+}
+
+themeButton.addEventListener("click", toggleTheme);
