@@ -1,0 +1,28 @@
+{
+  "name": "anipresence",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">\r   <img src=\"https://img.shields.io/github/license/xShive/AniPresence?style=flat-square\" alt=\"License\">\r   <img src=\"https://img.shields.io/github/v/release/xShive/AniPresence?style=flat-square\" alt=\"Version\">\r   <img src=\"https://img.shields.io/github/downloads/xShive/AniPresence/total?style=flat-square\" alt=\"Downloads\">\r </p>",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xShive/AniPresence.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/xShive/AniPresence/issues"
+  },
+  "homepage": "https://github.com/xShive/AniPresence#readme",
+  "devDependencies": {
+    "@types/chrome": "^0.1.43",
+    "typescript": "^6.0.3"
+  }
+}
