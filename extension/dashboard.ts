@@ -7,12 +7,15 @@ const statusMenu = document.querySelector(".status-menu");
 const modeSwitch = document.querySelector(".mode-switch");
 const modeText = document.querySelector(".mode-text");
 const themeButton = document.querySelector(".theme-btn");
+const posterElements = document.querySelectorAll<HTMLImageElement>(".grid .poster");
 
 
 // ========== data ==========
 const LOCAL_URL = "http://127.0.0.1:5001";   // our local Python server
 const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
 const mangaStatuses = ["Reading", "Completed", "On hold", "Dropped", "Plan to read"];
+let fullAnimeList: Anime[] = [];
+let fullMangaList: Manga[]  = [];
 
 
 // ========== status dropdown ==========
@@ -39,6 +42,7 @@ function selectStatus(event: MouseEvent) {
     const target = event.target as HTMLElement;          // event.target is a generic EventTarget; cast to read text
     statusText.textContent = target.textContent;         // put the clicked word on the button
     statusWrap.classList.remove("open");                 // close the menu
+    renderPosters()
 }
 
 // close the menu when clicking anywhere outside it
@@ -60,6 +64,7 @@ function toggleMode() {
         modeText.textContent = "Anime";
         fillStatusMenu(animeStatuses);
     }
+    renderPosters()
 }
 
 
@@ -75,13 +80,40 @@ function toggleTheme() {
 }
 
 
-// ========== fill animelist panel ==========
-async function fillAnime(type) {
-    const response = await fetch(`${LOCAL_URL}/mal/me/animelist`)
-    const data = await response.json()
-
-    
+// ========== fetch once on load ==========
+async function loadLists() {
+    const [animeResp, mangaResp] = await Promise.all([
+        fetch(`${LOCAL_URL}/mal/me/animelist`),
+        fetch(`${LOCAL_URL}/mal/me/mangalist`)
+    ]);
+    fullAnimeList = await animeResp.json();
+    fullMangaList = await mangaResp.json();
+    renderPosters();
 }
+
+// ========== renderPosters ==========
+function renderPosters() {
+    const isManga = modeSwitch.classList.contains("manga");
+    const list = isManga ? fullMangaList : fullAnimeList;
+    const status = statusText.textContent.toLowerCase().replace(/ /g, "_");
+    const filtered_list: BaseMedia[] = [];
+
+    for (let i = 0; i < list.length; i++) {
+        if (list[i].status == status) {
+            filtered_list.push(list[i]);
+        }
+    }
+
+    for (let i = 0; i < posterElements.length; i++) {
+        if (filtered_list[i]) {
+            posterElements[i].src = filtered_list[i].cover;
+            posterElements[i].style.visibility = "visible";
+        } else {
+            posterElements[i].style.visibility = "hidden";
+        }
+    }
+}
+
 
 
 // ========== UPDATE CHECK (disabled — moving into Settings later) ==========
@@ -111,7 +143,7 @@ async function fillAnime(type) {
 // ========== fill versionm, menu, add listeners ==========
 versionText.textContent = "v" + chrome.runtime.getManifest().version;
 fillStatusMenu(animeStatuses);
-
+loadLists();
 statusButton.addEventListener("click", toggleStatusMenu);
 modeSwitch.addEventListener("click", toggleMode);
 themeButton.addEventListener("click", toggleTheme);
