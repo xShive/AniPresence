@@ -10,6 +10,7 @@ const themeButton = document.querySelector(".theme-btn");
 
 
 // ========== data ==========
+const LOCAL_URL = "http://127.0.0.1:5001";   // our local Python server
 const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
 const mangaStatuses = ["Reading", "Completed", "On hold", "Dropped", "Plan to read"];
 
@@ -70,6 +71,13 @@ function toggleTheme() {
     } else {
         themeButton.textContent = "dark_mode";          // show the moon in light mode
     }
+}
+
+
+// ========== fill animelist panel ==========
+async function fillAnime(type) {
+    const response = await fetch(`${LOCAL_URL}/mal/me/animelist`)
+    const data = await response.json()
 }
 
 
