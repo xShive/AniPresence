@@ -1,10 +1,7 @@
 .vscode/
-.env
 build/
 dist/
 Output/
 src/__pycache__/
 ROADMAP.md
-*.log
-image.png
 node_modules/
