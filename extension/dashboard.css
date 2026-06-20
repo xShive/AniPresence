@@ -47,9 +47,19 @@ body {                              /* entire <body> tag*/
     to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes modal-risedown {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(12px); }
+}
+
 @keyframes modal-fade {
     from { opacity: 0; }
     to   { opacity: 1; }
+}
+
+@keyframes modal-fadeout {
+    from { opacity: 1; }
+    to   { opacity: 0; }
 }
 
 /* ========== VIEWS (view-swapping) ========== */
@@ -97,6 +107,10 @@ body {                              /* entire <body> tag*/
     display: none;
 }
 
+.modal-overlay.closing {
+    animation: modal-fadeout 0.15s ease forwards;
+}
+
 .modal-card {
     background: var(--bg);
     border-radius: 14px;
@@ -106,6 +120,7 @@ body {                              /* entire <body> tag*/
     overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     animation: modal-rise 0.15s ease;
+    scrollbar-gutter: stable;
 }
 
 .modal-card::-webkit-scrollbar {
@@ -123,6 +138,10 @@ body {                              /* entire <body> tag*/
 
 .modal-card::-webkit-scrollbar-thumb:hover {
     background: var(--btn-hover);
+}
+
+.modal-overlay.closing .modal-card {
+    animation: modal-risedown 0.15s ease forwards;
 }
 
 /* ----- detail content ----- */
@@ -193,6 +212,45 @@ body {                              /* entire <body> tag*/
     font-size: 13px;
     font-weight: 900;
     color: var(--text);
+}
+
+.ep-stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ep-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--btn);
+    color: var(--icon);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+/* two classes beat Google's single-class .material-symbols-outlined (24px default) */
+.ep-btn.material-symbols-outlined {
+    font-size: 18px;
+    line-height: 1;     /* kill the icon font's built-in line-height so it centres */
+}
+
+.ep-btn:hover {
+    background: var(--btn-hover);
+}
+
+.ep-btn:active {
+    transform: scale(0.9);
+}
+
+.detail-progress {
+    min-width: 46px;
+    text-align: center;
 }
 
 .detail-status {

@@ -167,7 +167,7 @@ def get_animelist():
 
                 "status":       status.get("status"),
                 "score":        status.get("score"),
-                "watched":      status.get("num_watched_episodes"),
+                "watched":      status.get("num_episodes_watched")
             })
 
         return anime

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,arrow_back,dark_mode,light_mode,settings,star,swap_horiz,unfold_more,visibility_off" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,add,arrow_back,dark_mode,light_mode,remove,settings,star,swap_horiz,unfold_more,visibility_off" />
 </head>
 
 <body>
@@ -101,7 +101,11 @@
             </div>
 
             <div class="detail-meta-row">
-                <span class="detail-progress"></span>
+                <div class="ep-stepper">
+                    <button class="ep-btn ep-minus material-symbols-outlined">remove</button>
+                    <span class="detail-progress"></span>
+                    <button class="ep-btn ep-plus material-symbols-outlined">add</button>
+                </div>
                 <span class="detail-status"></span>
             </div>
 

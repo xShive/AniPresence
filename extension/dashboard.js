@@ -31,6 +31,10 @@ const detailProgress = document.querySelector(".detail-progress");
 const detailStatus = document.querySelector(".detail-status");
 const detailSynopsis = document.querySelector(".detail-synopsis");
 const detailMal = document.querySelector(".detail-mal");
+const epMinus = document.querySelector(".ep-minus");
+const epPlus = document.querySelector(".ep-plus");
+// the anime/manga the modal is currently showing (so the +/- buttons know what to edit)
+let currentDetailItem = null;
 // ========== data ==========
 const LOCAL_URL = "http://127.0.0.1:5001"; // our local Python server
 const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
@@ -163,6 +167,7 @@ function prettyStatus(status) {
 }
 // fill the modal with the clicked item, then show it
 function openDetail(item) {
+    currentDetailItem = item; // remember it so the +/- buttons can edit it
     const total = item.num_episodes ?? item.num_chapters; // anime -> episodes, manga -> chapters
     const done = item.watched ?? item.chapters_read;
     detailCover.src = item.cover ?? "";
@@ -179,7 +184,43 @@ function openDetail(item) {
     detailModal.classList.remove("hidden"); // show the overlay
 }
 function closeDetail() {
-    detailModal.classList.add("hidden"); // hide the overlay
+    detailModal.classList.add("closing"); // play the exit animation
+    detailModal.addEventListener("animationend", function () {
+        detailModal.classList.remove("closing");
+        detailModal.classList.add("hidden"); // remove it from the page
+    }, { once: true });
+}
+// bump the episode/chapter count by +1 or -1 and push it to MAL
+function changeProgress(delta) {
+    if (!currentDetailItem)
+        return;
+    const item = currentDetailItem;
+    const isManga = "num_chapters" in item; // manga objects have num_chapters, anime don't
+    const total = (isManga ? item.num_chapters : item.num_episodes) || 0;
+    const current = (isManga ? item.chapters_read : item.watched) || 0;
+    let next = current + delta;
+    if (next < 0)
+        next = 0; // can't go below 0
+    if (total && next > total)
+        next = total; // can't exceed the total (only if the total is known)
+    if (next === current)
+        return; // nothing changed -> don't bother MAL
+    // keep our local object in sync so reopening shows the new number
+    if (isManga) {
+        item.chapters_read = next;
+    }
+    else {
+        item.watched = next;
+    }
+    detailProgress.textContent = `${next} / ${total || "?"}`; // update the screen right away
+    // send the change to MAL (fire-and-forget; the screen already updated)
+    update_status({
+        is_manga: isManga,
+        id: item.id,
+        target_status: item.status,
+        progress: next,
+        score: item.score,
+    });
 }
 // click the bg to close
 detailModal.addEventListener("click", function (event) {
@@ -254,4 +295,6 @@ statusButton.addEventListener("click", toggleStatusMenu);
 modeSwitch.addEventListener("click", toggleMode);
 themeButton.addEventListener("click", toggleTheme);
 backBtn.addEventListener("click", function () { closeDetail(); });
+epMinus.addEventListener("click", function () { changeProgress(-1); });
+epPlus.addEventListener("click", function () { changeProgress(1); });
 document.addEventListener("click", closeMenuOnOutsideClick);
