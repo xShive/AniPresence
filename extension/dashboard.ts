@@ -34,6 +34,7 @@ const detailSynopsis = document.querySelector(".detail-synopsis");
 const detailMal = document.querySelector<HTMLAnchorElement>(".detail-mal");
 const epMinus = document.querySelector(".ep-minus");
 const epPlus = document.querySelector(".ep-plus");
+const synopsisToggle = document.querySelector(".synopsis-toggle");
 
 // the anime/manga the modal is currently showing (so the +/- buttons know what to edit)
 let currentDetailItem: Anime | Manga | null = null;
@@ -210,7 +211,9 @@ function openDetail(item: Anime | Manga) {
     detailStatus.textContent = prettyStatus(item.status);
     detailSynopsis.textContent = item.synopsis || "No synopsis available.";
     detailMal.href = `https://myanimelist.net/anime/${item.id}`;
-
+    
+    detailSynopsis.classList.remove("expanded");        // reset each time new modal opens
+    synopsisToggle.textContent = "Show more...";
     detailModal.classList.remove("hidden");   // show the overlay
 }
 
@@ -306,6 +309,10 @@ function renderPosters() {
     }
 }
 
+synopsisToggle.addEventListener("click", function () {
+    const expanded = detailSynopsis.classList.toggle("expanded");
+    synopsisToggle.textContent = expanded ? "Show less" : "Show more...";
+})
 
 
 // ========== UPDATE CHECK (disabled — moving into Settings later) ==========

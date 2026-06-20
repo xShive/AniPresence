@@ -262,6 +262,26 @@ body {                              /* entire <body> tag*/
     line-height: 1.55;
     color: var(--text-muted);
     margin: 12px 0 0;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.detail-synopsis.expanded {
+    -webkit-line-clamp: unset;
+}
+
+.synopsis-toggle {
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    padding: 4px 0 0;
 }
 
 .detail-mal {
