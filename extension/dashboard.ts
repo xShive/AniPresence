@@ -125,26 +125,25 @@ function renderStrip(status: LiveStatus) {
     stripCover.src = status.cover ?? "";
     stripTitle.textContent = status.anime_title ?? "";
 
-    let subtitle = status.episode_line ?? "";
-    if (status.episode_title) {
-        subtitle += subtitle ? " · " + status.episode_title : status.episode_title;
-    }
+    let subtitle = status.episode_title;
     stripSubtitle.textContent = subtitle;
 
     stripStatus.textContent = status.ghost_mode ? "Ghost" : "Visible";
 
-    fillStripPills(status.anime_title);
+    fillStripPills(status.anime_title, status.episode_line);
 }
 
 // fill pills using MAL list data
-function fillStripPills(title: string | null) {
+function fillStripPills(title: string | null, episode_line: string | null) {
     const match = findAnimeByTitle(title);
     if (!match) {
         stripMeta.style.visibility = "hidden";   // no MAL match -> no metadata to show
         return;
     }
     stripMeta.style.visibility = "visible";
-    pillProgress.textContent = `${match.watched ?? 0} / ${match.num_episodes ?? "?"}`;
+
+    const epNum = episode_line ? episode_line.replace(/\D/g, "") : "";
+    pillProgress.textContent = `${epNum || match.watched || 0} / ${match.num_episodes || "?"}`;
     pillScore.textContent = match.mean != null ? String(match.mean) : "—";
     pillType.textContent = match.media_type ? match.media_type.toUpperCase() : "—";
 }
@@ -152,10 +151,14 @@ function fillStripPills(title: string | null) {
 // find the currently-watched anime in the loaded list
 function findAnimeByTitle(title: string | null): Anime | null {
     if (!title) return null;
-    const lower = title.toLowerCase();
+    const target = title.toLowerCase().trim();
+
     for (const anime of fullAnimeList) {
-        if (anime.title && anime.title.toLowerCase() === lower) {
-            return anime;
+        const names = [anime.title, anime.title_en, ...(anime.synonyms ?? [])];
+        for (const name of names) {
+            if (name && name.toLowerCase().trim() === target) {
+                return anime;
+            }
         }
     }
     return null;

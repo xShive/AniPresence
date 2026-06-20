@@ -12,8 +12,10 @@ interface BaseMedia {
   media_type: string | null;
   status: string | null;
   score: number | null;
+  title_en: string | null;
+  synonyms: string[];
 }
-
+  
 // animelist dict type extension
 interface Anime extends BaseMedia {
   num_episodes: number | null;

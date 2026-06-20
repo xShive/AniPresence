@@ -137,7 +137,7 @@ def get_animelist():
             "https://api.myanimelist.net/v2/users/@me/animelist",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
             params={
-                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean",
+                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles",
                 "limit": 1000,
             },
             timeout=10,
@@ -161,6 +161,8 @@ def get_animelist():
                 "media_type":   node.get("media_type"),
                 "num_episodes": node.get("num_episodes"),
                 "broadcast":    node.get("broadcast"),
+                "title_en":     node.get("alternative_titles", {}).get("en"),
+                "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
 
                 "status":       status.get("status"),
                 "score":        status.get("score"),
@@ -184,7 +186,7 @@ def get_mangalist():
             "https://api.myanimelist.net/v2/users/@me/mangalist",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
             params={
-                "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean",
+                "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
                 "limit": 1000,
             },
             timeout=10,
@@ -208,6 +210,8 @@ def get_mangalist():
                 "media_type":   node.get("media_type"),
                 "num_volumes":  node.get("num_volumes"),
                 "num_chapters": node.get("num_chapters"),
+                "title_en":     node.get("alternative_titles", {}).get("en"),
+                "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
 
                 "status":       status.get("status"),
                 "score":        status.get("score"),
