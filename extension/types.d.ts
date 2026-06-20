@@ -51,7 +51,6 @@ interface EntryUpdate {
   is_manga: boolean;
   id: number;
   target_status: string;
-  num_episodes: number;
-  num_volumes: number | null;
+  progress: number;
   score: number;
 }

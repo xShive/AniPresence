@@ -235,15 +235,17 @@ def update_anime_status(raw):
         
         anime_manga = "manga" if raw["is_manga"] else "anime"
         id = raw["id"]
+        progress_field = "num_chapters_read" if raw["is_manga"] else "num_watched_episodes"
+        data = {
+            "status": raw["target_status"],
+            "score": raw["score"],
+            progress_field: raw["progress"]
+        }
         
         response = requests.patch(
             f"https://api.myanimelist.net/v2/{anime_manga}/{id}/my_list_status",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
-            data={
-                "status": raw["target_status"],
-                "score": raw["score"],
-                "num_watched_episodes": raw["num_episodes"]
-            },
+            data=data,
             timeout=10
         )
         response.raise_for_status()
