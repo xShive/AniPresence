@@ -49,9 +49,9 @@ interface LiveStatus {
 
 interface EntryUpdate {
   is_manga: boolean;
-  id: int;
+  id: number;
   target_status: string;
-  num_episodes: int;
-  num_volumes: int | null;
-  score: int;
+  num_episodes: number;
+  num_volumes: number | null;
+  score: number;
 }
