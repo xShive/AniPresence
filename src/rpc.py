@@ -9,7 +9,7 @@ from updater import check_for_updates
 from helpers import time_to_seconds
 from functools import wraps
 from log_setup import setup_logging
-from mal_auth import start_login, handle_callback, get_my_info, logout, get_animelist, get_mangalist
+from mal_auth import start_login, handle_callback, get_my_info, logout, get_animelist, get_mangalist, update_anime_status
 
 import time
 import threading
@@ -264,6 +264,11 @@ def mal_animelist():
 @app.route("/mal/me/mangalist", methods=['GET'])
 def mal_mangalist():
     return jsonify(get_mangalist())
+
+@app.route("/mal/me/update/status", methods=['POST'])
+def mal_update_anime_status():
+    update_anime_status(request.get_json())
+    return jsonify({ "status" : "ok" })
 
 # ========== Main ==========
 if __name__ == '__main__':

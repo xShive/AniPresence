@@ -218,6 +218,15 @@ detailModal.addEventListener("click", function (event) {
     }
 });
 
+// update anime status
+async function update_status(status: EntryUpdate) {
+    await fetch(`${LOCAL_URL}/mal/me/update/status`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(status)
+    })
+}
+
 
 // ========== renderPosters ==========
 function renderPosters() {

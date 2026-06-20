@@ -225,3 +225,29 @@ def get_mangalist():
     except Exception as e:
         logger.error(f"Could not fetch MAL mangalist: {e}")
         return None
+    
+
+def update_anime_status(raw):
+    try:
+        tokens = get_token()
+        if not tokens:
+            return None
+        
+        anime_manga = "manga" if raw["is_manga"] else "anime"
+        id = raw["id"]
+        
+        response = requests.patch(
+            f"https://api.myanimelist.net/v2/{anime_manga}/{id}/my_list_status",
+            headers={"Authorization": "Bearer " + tokens["access_token"]},
+            data={
+                "status": raw["target_status"],
+                "score": raw["score"],
+                "num_watched_episodes": raw["num_episodes"]
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    except Exception as e:
+        logger.error(f"Could not update status: {e}")

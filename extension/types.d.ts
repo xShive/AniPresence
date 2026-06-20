@@ -46,3 +46,12 @@ interface LiveStatus {
   episode_title: string | null;
   cover: string | null;
 }
+
+interface EntryUpdate {
+  is_manga: boolean;
+  id: int;
+  target_status: string;
+  num_episodes: int;
+  num_volumes: int | null;
+  score: int;
+}
