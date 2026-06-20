@@ -13,6 +13,7 @@ interface BaseMedia {
   status: string | null;
   score: number | null;
   title_en: string | null;
+  title_ja: string | null;
   synonyms: string[];
 }
   

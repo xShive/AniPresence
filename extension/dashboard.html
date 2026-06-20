@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="en">
 <head>
-    <meta charset='utf-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AniPresence</title>
-    <link rel='stylesheet' href='dashboard.css'>
+    <link rel="stylesheet" href="dashboard.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,dark_mode,light_mode,settings,star,swap_horiz,unfold_more,visibility_off" />
-
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,arrow_back,dark_mode,light_mode,settings,star,swap_horiz,unfold_more,visibility_off" />
 </head>
 
 <body>
@@ -26,50 +25,91 @@
         </div>
     </header>
 
-    <section class="discord-strip">
-          <img class="strip-cover" src="" alt="cover">
+    <main class="views">
 
-          <div class="strip-info">
-            <h2 class="strip-title"></h2>
-            <p class="strip-subtitle"></p>
+        <!-- strip + panel -->
+        <section class="view view-main">
+            <section class="discord-strip">
+                <img class="strip-cover" src="" alt="cover">
 
-            <div class="strip-meta">
-                <span class="strip-pill pill-progress"></span>
-                <span class="strip-pill"><span class="material-symbols-outlined"></span><span class="pill-score"></span></span>
-                <span class="strip-pill pill-type"></span>
+                <div class="strip-info">
+                    <h2 class="strip-title"></h2>
+                    <p class="strip-subtitle"></p>
+
+                    <div class="strip-meta">
+                        <span class="strip-pill pill-progress"></span>
+                        <span class="strip-pill">
+                            <span class="material-symbols-outlined"></span>
+                            <span class="pill-score"></span>
+                        </span>
+                        <span class="strip-pill pill-type"></span>
+                    </div>
+                </div>
+
+                <span class="strip-status"></span>
+            </section>
+
+            <section class="panel">
+                <div class="controls">
+                    <div class="status-wrap">
+                        <button class="status-select">
+                            <span class="status-text"></span>
+                            <span class="material-symbols-outlined">unfold_more</span>
+                        </button>
+
+                        <ul class="status-menu">
+                            <li>Watching</li>
+                            <li>Completed</li>
+                            <li>On hold</li>
+                            <li>Dropped</li>
+                            <li>Plan to watch</li>
+                        </ul>
+                    </div>
+
+                    <button class="mode-switch">
+                        <span class="material-symbols-outlined">swap_horiz</span>
+                        <span class="mode-text">Anime</span>
+                    </button>
+                </div>
+
+                <div class="grid"></div>
+            </section>
+        </section>
+    </main>
+
+    <!-- detail modal -->
+    <div class="modal-overlay hidden">
+        <div class="modal-card">
+            <button class="back-btn material-symbols-outlined">arrow_back</button>
+
+            <div class="detail-hero">
+                <img class="detail-cover" src="" alt="cover">
+                <div class="detail-titles">
+                    <h2 class="detail-title"></h2>
+                    <p class="detail-romaji"></p>
+                    <p class="detail-kanji"></p>
+
+                    <div class="detail-pills">
+                        <span class="detail-pill detail-type"></span>
+                        <span class="detail-pill">
+                            <span class="material-symbols-outlined">star</span>
+                            <span class="detail-mean"></span>
+                        </span>
+                        <span class="detail-pill detail-rank"></span>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <span class="strip-status"></span>
-    </section>
-
-    <section class="panel">
-        <div class="controls">
-
-            <div class="status-wrap">
-                <button class="status-select">
-                    <span class="status-text"></span>
-                    <span class="material-symbols-outlined">unfold_more</span>
-                </button>
-
-                <ul class="status-menu">
-                    <li>Watching</li>
-                    <li>Completed</li>
-                    <li>On hold</li>
-                    <li>Dropped</li>
-                    <li>Plan to watch</li>
-                </ul>
+            <div class="detail-meta-row">
+                <span class="detail-progress"></span>
+                <span class="detail-status"></span>
             </div>
 
-            <button class="mode-switch">
-                <span class="material-symbols-outlined">swap_horiz</span>
-                <span class="mode-text">Anime</span>
-            </button>
-        </div>
+            <p class="detail-synopsis"></p>
 
-        <div class="grid">
+            <a class="detail-mal" target="_blank" rel="noopener">View on MAL</a>
         </div>
-    </section>
+    </div>
 
     <div class="footer">
         <a class="github" href="https://github.com/xShive/AniPresence">
@@ -86,6 +126,6 @@
         </div>
     </div>
 
-    <script src='dashboard.js'></script>
+    <script src="dashboard.js"></script>
 </body>
 </html>

@@ -162,6 +162,7 @@ def get_animelist():
                 "num_episodes": node.get("num_episodes"),
                 "broadcast":    node.get("broadcast"),
                 "title_en":     node.get("alternative_titles", {}).get("en"),
+                "title_ja":     node.get("alternative_titles", {}).get("ja"),
                 "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
 
                 "status":       status.get("status"),

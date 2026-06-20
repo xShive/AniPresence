@@ -18,6 +18,21 @@ const pillProgress = document.querySelector(".pill-progress");
 const pillScore = document.querySelector(".pill-score");
 const pillType = document.querySelector(".pill-type");
 
+// detail modal
+const detailModal = document.querySelector<HTMLElement>(".modal-overlay");
+const backBtn = document.querySelector(".back-btn");
+const detailCover = document.querySelector<HTMLImageElement>(".detail-cover");
+const detailTitle = document.querySelector(".detail-title");
+const detailRomaji = document.querySelector(".detail-romaji");
+const detailKanji = document.querySelector(".detail-kanji");
+const detailType = document.querySelector(".detail-type");
+const detailMean = document.querySelector(".detail-mean");
+const detailRank = document.querySelector(".detail-rank");
+const detailProgress = document.querySelector(".detail-progress");
+const detailStatus = document.querySelector(".detail-status");
+const detailSynopsis = document.querySelector(".detail-synopsis");
+const detailMal = document.querySelector<HTMLAnchorElement>(".detail-mal");
+
 
 // ========== data ==========
 const LOCAL_URL = "http://127.0.0.1:5001";   // our local Python server
@@ -164,6 +179,46 @@ function findAnimeByTitle(title: string | null): Anime | null {
     return null;
 }
 
+// ========== detail modal ==========
+// turn a MAL status pretty without underscores
+function prettyStatus(status: string | null): string {
+    if (!status) return "—";
+    const spaced = status.replace(/_/g, " ");                 // plan_to_watch -> plan to watch
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);   // capitalise the first letter
+}
+
+// fill the modal with the clicked item, then show it
+function openDetail(item: Anime | Manga) {
+    const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
+    const done  = (item as Anime).watched ?? (item as Manga).chapters_read;
+
+    detailCover.src = item.cover ?? "";
+    detailTitle.textContent = item.title_en || item.title || "Untitled";   // prefer English, fall back to romaji
+    detailRomaji.textContent = item.title ?? "";
+    detailKanji.textContent = item.title_ja ?? "";
+    detailType.textContent = item.media_type ? item.media_type.toUpperCase() : "—";
+    detailMean.textContent = item.mean != null ? String(item.mean) : "—";
+    detailRank.textContent = item.rank != null ? "#" + item.rank : "—";
+    detailProgress.textContent = `${done ?? 0} / ${total || "?"}`;
+    detailStatus.textContent = prettyStatus(item.status);
+    detailSynopsis.textContent = item.synopsis || "No synopsis available.";
+    detailMal.href = `https://myanimelist.net/anime/${item.id}`;
+
+    detailModal.classList.remove("hidden");   // show the overlay
+}
+
+function closeDetail() {
+    detailModal.classList.add("hidden");       // hide the overlay
+}
+
+// click the bg to close
+detailModal.addEventListener("click", function (event) {
+    if (event.target === detailModal) {
+        closeDetail();
+    }
+});
+
+
 // ========== renderPosters ==========
 function renderPosters() {
     const isManga = modeSwitch.classList.contains("manga");
@@ -188,6 +243,11 @@ function renderPosters() {
         overlay.innerHTML =
             `<div class="poster-title">${item.title ?? ""}</div>` +
             `<div class="poster-meta">★ ${item.score ?? "—"}</div>`;
+
+        // click a cover -> open the detail modal filled with this item
+        card.addEventListener("click", function () {
+            openDetail(item);
+        });
 
         card.appendChild(img);
         card.appendChild(overlay);
@@ -228,4 +288,5 @@ loadLists();
 statusButton.addEventListener("click", toggleStatusMenu);
 modeSwitch.addEventListener("click", toggleMode);
 themeButton.addEventListener("click", toggleTheme);
+backBtn.addEventListener("click", function () { closeDetail(); });
 document.addEventListener("click", closeMenuOnOutsideClick);

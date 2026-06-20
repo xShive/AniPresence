@@ -42,6 +42,193 @@ body {                              /* entire <body> tag*/
     to   { opacity: 1; transform: translateY(0); }      /* end state */
 }
 
+@keyframes modal-rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modal-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ========== VIEWS (view-swapping) ========== */
+.hidden {
+    display: none;          /* removes the element from layout entirely (no leftover gap) */
+}
+
+.view-detail {
+    padding: 0 14px;        /* match the side spacing of the strip/panel */
+}
+
+.back-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--btn);
+    color: var(--icon);
+    font-size: 22px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.back-btn:hover {
+    background-color: var(--btn-hover);
+}
+
+.back-btn:active {
+    transform: scale(0.92);
+}
+.modal-overlay {
+    position: fixed;
+    inset: 0;                              /* cover the whole popup */
+    background: rgba(18, 18, 33, 0.45);    /* the dim */
+    backdrop-filter: blur(4px);            /* the blur */
+
+    display: flex;                         /* these 3 lines center the card */
+    align-items: center;
+    justify-content: center;
+    z-index: 100;                          /* float above everything else */
+    animation: modal-fade 0.15s ease;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-card {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 16px;
+    width: 85%;
+    max-height: 85%;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modal-rise 0.15s ease;
+}
+
+.modal-card::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-card::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-card::-webkit-scrollbar-thumb {
+    background: var(--btn);
+    border-radius: 25px;
+}
+
+.modal-card::-webkit-scrollbar-thumb:hover {
+    background: var(--btn-hover);
+}
+
+/* ----- detail content ----- */
+.detail-hero {
+    display: flex;
+    gap: 14px;
+    margin-top: 6px;
+}
+
+.detail-cover {
+    width: 92px;
+    height: 128px;
+    flex: none;                 /* don't let the cover shrink */
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--btn);     /* placeholder colour while the image loads */
+}
+
+.detail-titles {
+    min-width: 0;               /* lets long titles wrap/ellipsis instead of overflowing */
+}
+
+.detail-title {
+    font-size: 16px;
+    font-weight: 900;
+    margin: 0;
+    color: var(--text);
+    line-height: 1.25;
+}
+
+.detail-romaji,
+.detail-kanji {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 2px 0 0;
+}
+
+.detail-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.detail-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 900;
+    background: var(--pill);
+    color: var(--icon);
+    padding: 3px 8px;
+    border-radius: 25px;
+}
+
+.detail-pill .material-symbols-outlined {
+    font-size: 11px;
+    color: #F5C518;             /* gold star, same as the strip */
+    font-variation-settings: 'FILL' 1;
+}
+
+.detail-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    font-size: 13px;
+    font-weight: 900;
+    color: var(--text);
+}
+
+.detail-status {
+    color: var(--text-muted);
+}
+
+.detail-synopsis {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 12px 0 0;
+}
+
+.detail-mal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--btn);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.detail-mal:hover {
+    background: var(--btn-hover);
+}
+
+.detail-mal:active {
+    transform: scale(0.98);
+}
+
 
 /* ========== HEADER ========== */
 .topbar {
