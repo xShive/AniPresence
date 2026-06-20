@@ -29,7 +29,8 @@ const detailType = document.querySelector(".detail-type");
 const detailMean = document.querySelector(".detail-mean");
 const detailRank = document.querySelector(".detail-rank");
 const detailProgress = document.querySelector(".detail-progress");
-const detailStatus = document.querySelector(".detail-status");
+const detailStatusDd = document.querySelector<HTMLElement>(".detail-status-dd");
+const detailScoreDd = document.querySelector<HTMLElement>(".detail-score-dd");
 const detailSynopsis = document.querySelector(".detail-synopsis");
 const detailMal = document.querySelector<HTMLAnchorElement>(".detail-mal");
 const epMinus = document.querySelector(".ep-minus");
@@ -100,26 +101,43 @@ function toggleMode() {
 
 // ========== dark mode ==========
 function toggleTheme() {
-    document.body.classList.toggle("dark");             // CSS swaps the whole palette off this class
+    const isDark = document.body.classList.toggle("dark");   // toggle returns true if "dark" is now on
+    themeButton.textContent = isDark ? "light_mode" : "dark_mode";
+    chrome.storage.local.set({ theme: isDark ? "dark" : "light" });   // remember the choice
+}
 
-    if (document.body.classList.contains("dark")) {
-        themeButton.textContent = "light_mode";         // show the sun in dark mode
-    } else {
-        themeButton.textContent = "dark_mode";          // show the moon in light mode
+// apply the saved theme on open
+async function loadTheme() {
+    const data = await chrome.storage.local.get("theme");
+    if (data.theme === "dark") {
+        document.body.classList.add("dark");
+        themeButton.textContent = "light_mode";
     }
 }
 
 
 // ========== fetch once on load ==========
 async function loadLists() {
+    // check if we have lists in cache
+    const cached = await chrome.storage.local.get(["animeList", "mangaList"]);
+    if (cached.animeList && cached.mangaList) {
+        fullAnimeList = cached.animeList;
+        fullMangaList = cached.mangaList;
+        renderPosters();
+    }
+
+    // fetch new list in background
     const [animeResp, mangaResp] = await Promise.all([
         fetch(`${LOCAL_URL}/mal/me/animelist`),
         fetch(`${LOCAL_URL}/mal/me/mangalist`)
     ]);
     fullAnimeList = await animeResp.json();
     fullMangaList = await mangaResp.json();
-    renderPosters();
-    loadStatus();               // lists are ready, so the strip pills can match
+    renderPosters();        // re-render
+    loadStatus();
+
+    // save the new lists so next open is instant
+    chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
 }
 
 
@@ -193,6 +211,85 @@ function prettyStatus(status: string | null): string {
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);   // capitalise the first letter
 }
 
+// build {value,label} options for a status dropdown (anime or manga) so that plan_to_watch = Plan to watch
+function statusOptions(isManga: boolean) {
+    const labels = isManga ? mangaStatuses : animeStatuses;
+    return labels.map(function (label) {
+        return { value: label.toLowerCase().replace(/ /g, "_"), label: label };
+    });
+}
+
+// build the score options 0-10 (0 shown as "-" = not rated)
+function scoreOptions() {
+    const opts = [{ value: "0", label: "—" }];
+    for (let i = 1; i <= 10; i++) {
+        opts.push({ value: String(i), label: String(i) });
+    }
+    return opts;
+}
+
+// fill dropdown: set its current label + build the menu items
+function fillDropdown(wrap: HTMLElement, options: { value: string; label: string }[], current: string, onSelect: (value: string) => void) {
+    const text = wrap.querySelector(".dropdown-text");
+    const menu = wrap.querySelector(".dropdown-menu");
+    menu.innerHTML = "";
+
+    const currentOpt = options.find(function (o) { return o.value === current; });
+    text.textContent = currentOpt ? currentOpt.label : "—";
+
+    for (const opt of options) {
+        const li = document.createElement("li");        // create new list ite\
+        li.textContent = opt.label;
+        li.addEventListener("click", function () {
+            text.textContent = opt.label;      // show the picked label on the button
+            wrap.classList.remove("open");      // close the menu
+            onSelect(opt.value);                // hand the value to the caller
+        });
+        menu.appendChild(li);
+    }
+}
+
+// build an EntryUpdate from the open item's CURRENT values and send it to MAL.
+// every edit (episodes, status, score) funnels through here, so it always sends a full, consistent snapshot.
+function pushUpdate() {
+    if (!currentDetailItem) return;
+    const item = currentDetailItem;
+    const isManga = "num_chapters" in item;
+    const progress = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
+
+    update_status({
+        is_manga: isManga,
+        id: item.id,
+        target_status: item.status,
+        progress: progress,
+        score: item.score,
+    });
+}
+
+// the user picked a new status
+function onStatusPick(value: string) {
+    if (!currentDetailItem) return;
+    currentDetailItem.status = value;   // update our object
+    pushUpdate();                       // then send everything
+}
+
+// the user picked a new score
+function onScorePick(value: string) {
+    if (!currentDetailItem) return;
+    currentDetailItem.score = Number(value);   // dropdown values are strings -> number
+    pushUpdate();
+}
+
+// close any open custom dropdown when clicking outside it
+function closeDropdownsOnOutsideClick(event: MouseEvent) {
+    const dropdowns = document.querySelectorAll(".dropdown");
+    for (const dd of dropdowns) {
+        if (!dd.contains(event.target as Node)) {
+            dd.classList.remove("open");
+        }
+    }
+}
+
 // fill the modal with the clicked item, then show it
 function openDetail(item: Anime | Manga) {
     currentDetailItem = item;   // remember it so the +/- buttons can edit it
@@ -208,7 +305,8 @@ function openDetail(item: Anime | Manga) {
     detailMean.textContent = item.mean != null ? String(item.mean) : "—";
     detailRank.textContent = item.rank != null ? "#" + item.rank : "—";
     detailProgress.textContent = `${done ?? 0} / ${total || "?"}`;
-    detailStatus.textContent = prettyStatus(item.status);
+    fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), item.status ?? "", onStatusPick);
+    fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
     detailSynopsis.textContent = item.synopsis || "No synopsis available.";
     detailMal.href = `https://myanimelist.net/anime/${item.id}`;
     
@@ -246,14 +344,13 @@ function changeProgress(delta: number) {
 
     detailProgress.textContent = `${next} / ${total || "?"}`;   // update the screen right away
 
-    // send the change to MAL (fire-and-forget; the screen already updated)
-    update_status({
-        is_manga: isManga,
-        id: item.id,
-        target_status: item.status,
-        progress: next,
-        score: item.score,
-    });
+    // reaching the last episode/chapter auto-marks it completed
+    if (total && next === total && item.status !== "completed") {
+        item.status = "completed";
+        detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";   // reflect it in the dropdown too
+    }
+
+    pushUpdate();   // send the full snapshot to MAL
 }
 
 // click the bg to close
@@ -341,6 +438,7 @@ synopsisToggle.addEventListener("click", function () {
 
 // ========== fill versionm, menu, add listeners ==========
 versionText.textContent = "v" + chrome.runtime.getManifest().version;
+loadTheme();
 fillStatusMenu(animeStatuses);
 loadLists();
 statusButton.addEventListener("click", toggleStatusMenu);
@@ -349,4 +447,7 @@ themeButton.addEventListener("click", toggleTheme);
 backBtn.addEventListener("click", function () { closeDetail(); });
 epMinus.addEventListener("click", function () { changeProgress(-1); });
 epPlus.addEventListener("click", function () { changeProgress(1); });
+detailStatusDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailStatusDd.classList.toggle("open"); });
+detailScoreDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailScoreDd.classList.toggle("open"); });
 document.addEventListener("click", closeMenuOnOutsideClick);
+document.addEventListener("click", closeDropdownsOnOutsideClick);

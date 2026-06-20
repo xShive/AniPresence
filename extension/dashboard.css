@@ -153,7 +153,7 @@ body {                              /* entire <body> tag*/
 
 .detail-cover {
     width: 92px;
-    height: 128px;
+    height: 120px;
     flex: none;                 /* don't let the cover shrink */
     border-radius: 8px;
     object-fit: cover;
@@ -162,6 +162,9 @@ body {                              /* entire <body> tag*/
 
 .detail-titles {
     min-width: 0;               /* lets long titles wrap/ellipsis instead of overflowing */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;   /* titles at the top, pills pinned to the cover's base */
 }
 
 .detail-title {
@@ -204,14 +207,29 @@ body {                              /* entire <body> tag*/
     font-variation-settings: 'FILL' 1;
 }
 
-.detail-meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* grouped "edit zone" panel */
+.detail-stats {
+    background: var(--pill);        /* soft lavender surface (was near-white --menu) */
+    border-radius: 12px;
+    padding: 2px 12px;
     margin-top: 14px;
-    font-size: 13px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+}
+
+.stat-row + .stat-row {
+    border-top: 1px solid rgba(121, 123, 185, 0.18);   /* hairline divider between rows */
+}
+
+.stat-label {
+    font-size: 12px;
     font-weight: 900;
-    color: var(--text);
+    color: var(--icon);
 }
 
 .ep-stepper {
@@ -251,11 +269,81 @@ body {                              /* entire <body> tag*/
 .detail-progress {
     min-width: 46px;
     text-align: center;
+    font-weight: 900;               /* match the dropdown values so all the row values look the same */
 }
 
-.detail-status {
+/* reusable custom dropdown (same look as the controls status dropdown) */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text);
+    padding: 0;
+    transition: opacity 0.15s ease;
+}
+
+.dropdown-btn:hover {
+    opacity: 0.67;
+}
+
+.dropdown-btn .material-symbols-outlined {
+    font-size: 16px;
     color: var(--text-muted);
 }
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;                       /* anchor to the right (dropdown sits on the row's right edge) */
+    margin: 6px 0 0;
+    padding: 4px;
+    list-style: none;
+    background: var(--menu);
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(35, 36, 67, 0.18);
+    z-index: 10;
+    min-width: 120px;
+    max-height: 180px;              /* long menus (score 0-10) scroll instead of overflowing the card */
+    overflow-y: auto;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.dropdown.open .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-menu li {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease;
+}
+
+.dropdown-menu li:hover {
+    background-color: var(--menu-hover);
+    font-weight: 900;
+}
+
 
 .detail-synopsis {
     font-size: 12px;
@@ -282,6 +370,11 @@ body {                              /* entire <body> tag*/
     font-weight: 900;
     cursor: pointer;
     padding: 4px 0 0;
+    transition: opacity 0.15s ease;
+}
+
+.synopsis-toggle:hover {
+    opacity: 0.67;
 }
 
 .detail-mal {

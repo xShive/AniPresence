@@ -85,9 +85,11 @@
             <div class="detail-hero">
                 <img class="detail-cover" src="" alt="cover">
                 <div class="detail-titles">
-                    <h2 class="detail-title"></h2>
-                    <p class="detail-romaji"></p>
-                    <p class="detail-kanji"></p>
+                    <div class="detail-titles-top">
+                        <h2 class="detail-title"></h2>
+                        <p class="detail-romaji"></p>
+                        <p class="detail-kanji"></p>
+                    </div>
 
                     <div class="detail-pills">
                         <span class="detail-pill detail-type"></span>
@@ -100,13 +102,35 @@
                 </div>
             </div>
 
-            <div class="detail-meta-row">
-                <div class="ep-stepper">
-                    <button class="ep-btn ep-minus material-symbols-outlined">remove</button>
-                    <span class="detail-progress"></span>
-                    <button class="ep-btn ep-plus material-symbols-outlined">add</button>
+            <div class="detail-stats">
+                <div class="stat-row">
+                    <span class="stat-label">Episodes</span>
+                    <div class="ep-stepper">
+                        <button class="ep-btn ep-minus material-symbols-outlined">remove</button>
+                        <span class="detail-progress"></span>
+                        <button class="ep-btn ep-plus material-symbols-outlined">add</button>
+                    </div>
                 </div>
-                <span class="detail-status"></span>
+                <div class="stat-row">
+                    <span class="stat-label">Status</span>
+                    <div class="dropdown detail-status-dd">
+                        <button class="dropdown-btn">
+                            <span class="dropdown-text"></span>
+                            <span class="material-symbols-outlined">unfold_more</span>
+                        </button>
+                        <ul class="dropdown-menu"></ul>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Your rating</span>
+                    <div class="dropdown detail-score-dd">
+                        <button class="dropdown-btn">
+                            <span class="dropdown-text"></span>
+                            <span class="material-symbols-outlined">unfold_more</span>
+                        </button>
+                        <ul class="dropdown-menu"></ul>
+                    </div>
+                </div>
             </div>
 
             <p class="detail-synopsis"></p>
