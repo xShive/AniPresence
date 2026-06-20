@@ -8,7 +8,15 @@ const statusMenu = document.querySelector(".status-menu");
 const modeSwitch = document.querySelector(".mode-switch");
 const modeText = document.querySelector(".mode-text");
 const themeButton = document.querySelector(".theme-btn");
-const posterElements = document.querySelectorAll(".grid .poster");
+// discord strip
+const stripCover = document.querySelector(".strip-cover");
+const stripTitle = document.querySelector(".strip-title");
+const stripSubtitle = document.querySelector(".strip-subtitle");
+const stripMeta = document.querySelector(".strip-meta");
+const stripStatus = document.querySelector(".strip-status");
+const pillProgress = document.querySelector(".pill-progress");
+const pillScore = document.querySelector(".pill-score");
+const pillType = document.querySelector(".pill-type");
 // ========== data ==========
 const LOCAL_URL = "http://127.0.0.1:5001"; // our local Python server
 const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
@@ -76,6 +84,59 @@ async function loadLists() {
     fullAnimeList = await animeResp.json();
     fullMangaList = await mangaResp.json();
     renderPosters();
+    loadStatus(); // lists are ready, so the strip pills can match
+}
+// ========== discord strip ==========
+// hit api to fetch current data
+async function loadStatus() {
+    const resp = await fetch(`${LOCAL_URL}/status`);
+    const status = await resp.json();
+    renderStrip(status);
+}
+function renderStrip(status) {
+    // nothing playing -> idle state
+    if (!status.is_watching) {
+        stripCover.style.display = "none";
+        stripTitle.textContent = "Nothing playing";
+        stripSubtitle.textContent = "Start an episode to see it here";
+        stripMeta.style.visibility = "hidden";
+        stripStatus.textContent = status.ghost_mode ? "Ghost" : "Idle";
+        return;
+    }
+    // live playback (from the browser scrape, via Python)
+    stripCover.src = status.cover ?? "";
+    stripTitle.textContent = status.anime_title ?? "";
+    let subtitle = status.episode_line ?? "";
+    if (status.episode_title) {
+        subtitle += subtitle ? " · " + status.episode_title : status.episode_title;
+    }
+    stripSubtitle.textContent = subtitle;
+    stripStatus.textContent = status.ghost_mode ? "Ghost" : "Visible";
+    fillStripPills(status.anime_title);
+}
+// fill pills using MAL list data
+function fillStripPills(title) {
+    const match = findAnimeByTitle(title);
+    if (!match) {
+        stripMeta.style.visibility = "hidden"; // no MAL match -> no metadata to show
+        return;
+    }
+    stripMeta.style.visibility = "visible";
+    pillProgress.textContent = `${match.watched ?? 0} / ${match.num_episodes ?? "?"}`;
+    pillScore.textContent = match.mean != null ? String(match.mean) : "—";
+    pillType.textContent = match.media_type ? match.media_type.toUpperCase() : "—";
+}
+// find the currently-watched anime in the loaded list
+function findAnimeByTitle(title) {
+    if (!title)
+        return null;
+    const lower = title.toLowerCase();
+    for (const anime of fullAnimeList) {
+        if (anime.title && anime.title.toLowerCase() === lower) {
+            return anime;
+        }
+    }
+    return null;
 }
 // ========== renderPosters ==========
 function renderPosters() {

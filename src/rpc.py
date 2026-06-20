@@ -31,6 +31,10 @@ current_end_timestamp = None
 last_episode = None
 
 current_title_and_number = None
+current_anime_title = None
+current_episode_line = None
+current_episode_title = None
+current_cover = None
 
 # ========== Heartbeat Timeout Logic =========
 def timeout_monitor():
@@ -74,6 +78,7 @@ CORS(app)
 def watching():
     global last_ping_time, is_presence_active, is_paused_active, rpc_connected, rpc, current_title_and_number
     global current_end_timestamp, last_episode
+    global current_anime_title, current_episode_line, current_episode_title, current_cover
 
     last_ping_time = time.time() # reset timer
     is_presence_active = True
@@ -102,7 +107,13 @@ def watching():
     paused = data.get('paused', False)
 
     anime_title_and_number = f"{anime_title} ∙ {episode_line}"
-    
+
+    # remember the live snapshot so the popup strip can read it from /status
+    current_anime_title = anime_title
+    current_episode_line = episode_line
+    current_episode_title = episode_title
+    current_cover = cover
+
     episode_changed = (episode_line != last_episode)
     last_episode = episode_line
 
@@ -173,6 +184,7 @@ def watching():
 @app.route('/stopped', methods=['POST'])
 def stopped():
     global is_presence_active, current_end_timestamp, last_episode, current_title_and_number
+    global current_anime_title, current_episode_line, current_episode_title, current_cover
     try:
         rpc.clear()
 
@@ -183,6 +195,10 @@ def stopped():
     current_end_timestamp = None
     last_episode = None
     current_title_and_number = None
+    current_anime_title = None
+    current_episode_line = None
+    current_episode_title = None
+    current_cover = None
     print("Presence cleared")
     return jsonify({ "status": "ok" })
 
@@ -193,7 +209,16 @@ def update():
 
 @app.route('/status', methods=['GET'])
 def status():
-    return jsonify({"title_number": current_title_and_number or None, "is_watching": is_presence_active, "is_paused": is_paused_active})
+    return jsonify({
+        "is_watching": is_presence_active,
+        "is_paused": is_paused_active,
+        "ghost_mode": ghost_mode,
+        "title_number": current_title_and_number or None,
+        "anime_title": current_anime_title,
+        "episode_line": current_episode_line,
+        "episode_title": current_episode_title,
+        "cover": current_cover,
+    })
 
 @app.route('/ghost', methods=['POST'])
 def toggle_ghost():

@@ -32,4 +32,14 @@ interface Manga extends BaseMedia {
   chapters_read: number | null;
 }
 
-type statusType = string;
+// what /status returns: the live "now watching" snapshot
+interface LiveStatus {
+  is_watching: boolean;
+  is_paused: boolean;
+  ghost_mode: boolean;
+  title_number: string | null;
+  anime_title: string | null;
+  episode_line: string | null;
+  episode_title: string | null;
+  cover: string | null;
+}
