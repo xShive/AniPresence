@@ -96,21 +96,29 @@ function renderPosters() {
     const isManga = modeSwitch.classList.contains("manga");
     const list = isManga ? fullMangaList : fullAnimeList;
     const status = statusText.textContent.toLowerCase().replace(/ /g, "_");
-    const filtered_list: BaseMedia[] = [];
 
-    for (let i = 0; i < list.length; i++) {
-        if (list[i].status == status) {
-            filtered_list.push(list[i]);
-        }
-    }
+    const grid = document.querySelector(".grid");
+    grid.innerHTML = "";                       // clear old posters
 
-    for (let i = 0; i < posterElements.length; i++) {
-        if (filtered_list[i]) {
-            posterElements[i].src = filtered_list[i].cover;
-            posterElements[i].style.visibility = "visible";
-        } else {
-            posterElements[i].style.visibility = "hidden";
-        }
+    for (const item of list) {
+        if (item.status !== status) continue;  // skip ones that don't match
+
+        const card = document.createElement("div");
+        card.className = "poster";             // wrapper: anchors the overlay
+
+        const img = document.createElement("img");
+        img.className = "poster-img";
+        img.src = item.cover ?? "";            // ?? "" handles a null cover
+
+        const overlay = document.createElement("div");
+        overlay.className = "poster-overlay";
+        overlay.innerHTML =
+            `<div class="poster-title">${item.title ?? ""}</div>` +
+            `<div class="poster-meta">★ ${item.score ?? "—"}</div>`;
+
+        card.appendChild(img);
+        card.appendChild(overlay);
+        grid.appendChild(card);
     }
 }
 

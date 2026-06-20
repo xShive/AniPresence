@@ -318,24 +318,84 @@ h1 {
     grid-template-columns: repeat(4, 1fr);      /* 4 cols*/
     gap: 10px;
     margin-top: 10px;
+    max-height: 330px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+.grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.grid::-webkit-scrollbar-thumb {
+    background: var(--btn);
+    border-radius: 25px;
+}
+
+.grid::-webkit-scrollbar-thumb:hover {
+    background: var(--btn-hover);
 }
 
 .poster {
-    width: 100%;         /* fill the cols (means '100% of my container' */
+    position: relative;     /* anchor for the overlay (same trick as .status-wrap) */
     aspect-ratio: 3/4;
-    object-fit: cover;
     border-radius: 8px;
-    display: block;
+    overflow: hidden;       /* clips the zoom + overlay to the rounded corners */
     cursor: pointer;
-    transition: transform 0.15s ease;
 }
 
-.poster:hover {
-    transform: scale(1.05);
+.poster-img {
+    width: 100%;            /* fill the wrapper */
+    height: 100%;
+    object-fit: cover;      /* crop to fill without stretching */
+    display: block;
+    transition: transform 0.2s ease;
 }
 
-.poster:active {
-    transform: scale(0.98);
+.poster:hover .poster-img {
+    transform: scale(1.08); /* gentle zoom on hover */
+}
+
+.poster-overlay {
+    position: absolute;     /* floats over the image (same as .status-menu) */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 18px 8px 8px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent); /* dark fade so white text stays readable */
+    color: #ffffff;
+
+    opacity: 0;             /* hidden until hover */
+    transform: translateY(6px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.poster:hover .poster-overlay {
+    opacity: 1;             /* fade + slide up in */
+    transform: translateY(0);
+}
+
+.poster-title {
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.2;
+
+    display: -webkit-box;           /* clamp long titles to 3 lines */
+    -webkit-line-clamp: 3;          /* ... */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.poster-meta {
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-top: 3px;
 }
 
 
