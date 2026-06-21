@@ -137,7 +137,7 @@ def get_animelist():
             "https://api.myanimelist.net/v2/users/@me/animelist",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
             params={
-                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles",
+                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
                 "limit": 1000,
             },
             timeout=10,
@@ -164,6 +164,7 @@ def get_animelist():
                 "title_en":     node.get("alternative_titles", {}).get("en"),
                 "title_ja":     node.get("alternative_titles", {}).get("ja"),
                 "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
+                "airing_status":node.get("status"),
 
                 "status":       status.get("status"),
                 "score":        status.get("score"),

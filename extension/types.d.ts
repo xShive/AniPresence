@@ -21,6 +21,7 @@ interface BaseMedia {
 interface Anime extends BaseMedia {
   num_episodes: number | null;
   watched: number | null;
+  airing_status: string | null;   // MAL "status": currently_airing / finished_airing / not_yet_aired
   broadcast: {
     day_of_the_week?: string;
     start_time?: string;

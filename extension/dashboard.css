@@ -227,6 +227,11 @@ body {                              /* entire <body> tag*/
     padding: 9px 0;
 }
 
+/* two classes beat .stat-row's display:flex, so forcefully hide */
+.stat-row.hidden {
+    display: none;
+}
+
 .stat-row + .stat-row {
     border-top: 1px solid rgba(121, 123, 185, 0.18);   /* hairline divider between rows */
 }
@@ -275,6 +280,13 @@ body {                              /* entire <body> tag*/
     min-width: 46px;
     text-align: center;
     font-weight: 900;               /* match the dropdown values so all the row values look the same */
+    color: var(--text);
+}
+
+.detail-countdown {
+    font-size: 13px;
+    font-weight: 900;
+    color: var(--text);
 }
 
 /* reusable custom dropdown (same look as the controls status dropdown) */
@@ -657,6 +669,10 @@ h1 {
     transform: scale(1.05);
 }
 
+.strip-cover:not([src]) {
+    visibility: hidden;
+}
+
 .strip-title {
     font-size: 13px;
     font-weight: 900;
@@ -914,54 +930,85 @@ h1 {
     padding: 0 25px;
 }
 
-.ghost-toggle {
-    display: inline-flex;          /* pill only as wide as its contents */
+/* ========== SETTINGS ========== */
+.settings-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--text);
+    margin: 6px 0 12px;
+}
+
+.settings-row {
+    display: flex;
     align-items: center;
-    gap: 10px;
-    background-color: #A9B0AE;     /* grey-green track (accent, same in both themes) */
-    border-radius: 25px;
-    padding: 4px 4px 4px 20px;     /* lots of room on the left for the label, tight on the right for the knob */
-    cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.1s ease;
+    justify-content: space-between;
+    padding: 11px 0;
 }
 
-.ghost-toggle:hover {
-    background-color: #9AA3A0;      /* track darkens slightly on hover */
+.settings-row + .settings-row {
+    border-top: 1px solid rgba(121, 123, 185, 0.18);   /* hairline divider */
 }
 
-.ghost-toggle:active {
-    transform: scale(0.97);         /* subtle press */
-}
-
-.ghost-label {
+.settings-label {
     font-size: 13px;
     font-weight: 900;
-    color: #ffffff;
+    color: var(--text);
 }
 
-.ghost-knob {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;            /* the round knob */
-    background-color: #DEDEED;
-    display: flex;                 /* center the icon inside the knob (insides*/
-    align-items: center;          /* center left to right */
-    justify-content: center;      /* center top to bottom */
-    transition: transform 0.2s ease;   /* lets the knob glide */
+/* small on/off switch (the ghost toggle) */
+.toggle {
+    width: 38px;
+    height: 22px;
+    flex: none;
+    border: none;
+    border-radius: 25px;
+    background: var(--btn);             /* off = neutral track */
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: background-color 0.2s ease;
 }
 
-.ghost-toggle:hover .ghost-knob {
-    transform: translateX(-4px);   /* preview: knob nudges as a hint it slides */
+.toggle-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    transition: transform 0.2s ease;
 }
 
-.ghost-knob .material-symbols-outlined {
-    font-size: 18px;
-    color: #232443;
+.toggle.on {
+    background: #59D97F;                /* on = green (ghost active) */
+}
+
+.toggle.on .toggle-knob {
+    transform: translateX(16px);        /* slide the knob to the right */
+}
+
+.update-btn {
+    border: none;
+    background: var(--btn);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 6px 12px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.update-btn:hover {
+    background: var(--btn-hover);
 }
 
 .github {
     color: var(--text);            /* the svg uses fill="currentColor", so it follows this */
     transition: transform 0.15s ease;
+    margin-bottom: 8px;
 }
 
 .github:hover {

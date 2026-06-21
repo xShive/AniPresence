@@ -32,11 +32,14 @@ const detailKanji = document.querySelector(".detail-kanji");
 const detailType = document.querySelector(".detail-type");
 const detailMean = document.querySelector(".detail-mean");
 const detailRank = document.querySelector(".detail-rank");
+const detailEpisode = document.querySelector(".episode-label");
 const detailProgress = document.querySelector(".detail-progress");
 const detailStatusDd = document.querySelector<HTMLElement>(".detail-status-dd");
 const detailScoreDd = document.querySelector<HTMLElement>(".detail-score-dd");
 const detailSynopsis = document.querySelector(".detail-synopsis");
 const detailMal = document.querySelector<HTMLAnchorElement>(".detail-mal");
+const detailCountdown = document.querySelector(".detail-countdown");
+const countdownRow = document.querySelector<HTMLElement>(".countdown-row");
 const epMinus = document.querySelector(".ep-minus");
 const epPlus = document.querySelector(".ep-plus");
 const synopsisToggle = document.querySelector(".synopsis-toggle");
@@ -57,6 +60,14 @@ const accountEps = document.querySelector(".account-eps");
 const accountCompleted = document.querySelector(".account-completed");
 const accountConnect = document.querySelector(".account-connect");
 const accountDisconnect = document.querySelector(".account-disconnect");
+
+// settings modal
+const settingsOverlay = document.querySelector<HTMLElement>(".settings-overlay");
+const ghostSwitch = document.querySelector<HTMLElement>(".ghost-switch");
+const settingsVersion = document.querySelector(".settings-version");
+const updateBtn = document.querySelector<HTMLButtonElement>(".update-btn");
+const settingsBtn = document.querySelector(".settings-btn")
+const settingsBack = document.querySelector(".settings-back");
 
 let userInfo: any = null;   // the /mal/me profile, or null when logged out
 
@@ -364,12 +375,46 @@ async function disconnectMal() {
     renderAccount();        // shows the connect prompt
 }
 
+// how long until the next episode airs
+// MAL's broadcast day + time are in JST (UTC+9) so we do math in JST then convert back.
+function nextEpisodeIn(broadcast: { day_of_the_week?: string; start_time?: string } | null | undefined): string | null {
+    if (!broadcast || !broadcast.day_of_the_week || !broadcast.start_time) return null;
+
+    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const targetDay = days.indexOf(broadcast.day_of_the_week.toLowerCase());
+    if (targetDay === -1) return null;
+
+    const [hh, mm] = broadcast.start_time.split(":").map(Number);
+
+    const now = new Date();
+    // shift "now" +9h so its UTC fields read as the current JST wall-clock
+    const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+
+    const dayDiff = (targetDay - jstNow.getUTCDay() + 7) % 7;   // days until that weekday (in JST)
+
+    // build the target JST wall-clock moment, then convert that back to a real UTC instant (-9h)
+    const targetJst = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate() + dayDiff, hh, mm, 0);
+    let airTime = targetJst - 9 * 60 * 60 * 1000;
+
+    if (airTime <= now.getTime()) {           // already passed this week -> jump a week
+        airTime += 7 * 24 * 60 * 60 * 1000;
+    }
+
+    const diffMin = Math.floor((airTime - now.getTime()) / 60000);
+    const d = Math.floor(diffMin / (60 * 24));
+    const h = Math.floor((diffMin % (60 * 24)) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h`;
+    return `${diffMin % 60}m`;
+}
+
 // fill the modal with the clicked item, then show it
 function openDetail(item: Anime | Manga) {
     currentDetailItem = item;   // remember it so the +/- buttons can edit it
 
     const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
     const done  = (item as Anime).watched ?? (item as Manga).chapters_read;
+    const isManga = "num_chapters" in item;
 
     detailCover.src = item.cover ?? "";
     detailTitle.textContent = item.title_en || item.title || "Untitled";   // prefer English, fall back to romaji
@@ -378,12 +423,23 @@ function openDetail(item: Anime | Manga) {
     detailType.textContent = item.media_type ? item.media_type.toUpperCase() : "—";
     detailMean.textContent = item.mean != null ? String(item.mean) : "—";
     detailRank.textContent = item.rank != null ? "#" + item.rank : "—";
+    detailEpisode.textContent = isManga ? "Chapters" : "Episodes";
     detailProgress.textContent = `${done ?? 0} / ${total || "?"}`;
     fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), item.status ?? "", onStatusPick);
     fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
     detailSynopsis.textContent = item.synopsis || "No synopsis available.";
     detailMal.href = `https://myanimelist.net/anime/${item.id}`;
-    
+
+    // next-episode countdown: only for shows that are actually still airing
+    const isAiring = (item as Anime).airing_status === "currently_airing";
+    const countdown = isAiring ? nextEpisodeIn((item as Anime).broadcast) : null;
+    if (countdown) {
+        detailCountdown.textContent = countdown;
+        countdownRow.classList.remove("hidden");
+    } else {
+        countdownRow.classList.add("hidden");
+    }
+
     detailSynopsis.classList.remove("expanded");        // reset each time new modal opens
     synopsisToggle.textContent = "Show more...";
     detailModal.classList.remove("hidden");   // show the overlay
@@ -485,29 +541,53 @@ synopsisToggle.addEventListener("click", function () {
     synopsisToggle.textContent = expanded ? "Show less" : "Show more...";
 })
 
+function openSettings() {
+    loadSettings();                              // refresh the toggle + update check each time it opens
+    settingsOverlay.classList.remove("hidden");
+}
 
-// ========== UPDATE CHECK (disabled — moving into Settings later) ==========
-/* fetch("http://127.0.0.1:5001/update")
-    .then(function (response) {
-        return response.json();
-    })
-    .then(function (data) {
-        let latest_version = data["latest_version"];
-        let download_url = data["download_url"];
+// pull the current ghost state + version + update status into the settings panel
+async function loadSettings() {
+    settingsVersion.textContent = "Version " + chrome.runtime.getManifest().version;
 
-        if (!latest_version) {
-            document.getElementById("download-button").textContent = "Up to date!";
-            return;
-        }
+    // ghost state lives in /status
+    const resp = await fetch(`${LOCAL_URL}/status`);
+    const status: LiveStatus = await resp.json();
+    ghostSwitch.classList.toggle("on", status.ghost_mode);
 
-        function openURL() {
-            window.open(download_url);
-        }
+    checkUpdate();
+}
 
-        document.getElementById("download-button").textContent = "Download " + latest_version;
-        document.getElementById("download-button").onclick = openURL;
-    });
-*/
+// ask Python if there's a newer release
+function checkUpdate() {
+    updateBtn.textContent = "Checking…";
+    fetch(`${LOCAL_URL}/update`)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.latest_version) {
+                updateBtn.textContent = "Up to date";
+                updateBtn.onclick = null;
+            } else {
+                updateBtn.textContent = "Download " + data.latest_version;
+                updateBtn.onclick = function () { window.open(data.download_url); };
+            }
+        });
+}
+
+// flip ghost mode by hitting python api
+async function toggleGhost() {
+    const resp = await fetch(`${LOCAL_URL}/ghost`, { method: "POST" });
+    const data = await resp.json();
+    ghostSwitch.classList.toggle("on", data.ghost_mode);
+}
+
+function closeSettings() {
+    settingsOverlay.classList.add("closing");
+    settingsOverlay.addEventListener("animationend", function () {
+        settingsOverlay.classList.remove("closing");
+        settingsOverlay.classList.add("hidden");
+    }, { once: true });
+}
 
 
 // ========== boot ==========
@@ -542,3 +622,7 @@ accountDisconnect.addEventListener("click", disconnectMal);
 accountOverlay.addEventListener("click", function (event) { if (event.target === accountOverlay) closeAccount(); });
 document.addEventListener("click", closeMenuOnOutsideClick);
 document.addEventListener("click", closeDropdownsOnOutsideClick);
+settingsBtn.addEventListener("click", openSettings);
+settingsBack.addEventListener("click", closeSettings);
+settingsOverlay.addEventListener("click", function (event) { if (event.target === settingsOverlay) closeSettings(); });
+ghostSwitch.addEventListener("click", toggleGhost);
