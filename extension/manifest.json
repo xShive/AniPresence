@@ -18,6 +18,10 @@
         "https://www.miruro.bz/*",
         "https://www.miruro.to/*",
         "https://www.miruro.ru/*",
+        "https://animetsu.net/*",
+        "https://animetsu.cc/*",
+        "https://animetsu.live/*",
+        "https://animetsu.bz/*",
         "https://www.crunchyroll.com/*",
         "https://crunchyroll.com/*",
         "https://animepahe.pw/*",
@@ -36,7 +40,7 @@
 
     "content_scripts": [
         {
-            "matches": ["https://www.miruro.tv/*", "https://www.miruro.bz/*", "https://www.miruro.to/*", "https://www.miruro.ru/*", "https://www.crunchyroll.com/*", "https://crunchyroll.com/*", "https://animepahe.pw/*"],
+            "matches": ["https://www.miruro.tv/*", "https://www.miruro.bz/*", "https://www.miruro.to/*", "https://www.miruro.ru/*", "https://animetsu.net/*", "https://animetsu.live/*", "https://animetsu.cc/*", "https://animetsu.bz/*", "https://www.crunchyroll.com/*", "https://crunchyroll.com/*", "https://animepahe.pw/*"],
             "js": ["helpers.js", "config.js", "content.js"]
         },
         {

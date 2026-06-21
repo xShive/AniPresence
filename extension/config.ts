@@ -22,6 +22,22 @@ const MIRURO_CONFIG: SiteConfig = {
     },
 };
 
+// ========== Animetsu Config ==========
+const ANIMETSU_CONFIG: SiteConfig = {
+    watchPathIncludes: ["/watch"],
+    selectors: {
+    animeTitle:     "div[class*=\"-tracking-\\[0.02rem\\]\"]",
+    episodeTitle:   ".text-lg",
+    episodeNum:     "div.text-xs.text-muted.line-clamp-1\\!",
+    cover:          "div.aspect-video img",
+    video:          "video",
+    },
+    parseEpisodeNumber: function (raw) {
+        if (!raw) return "";
+        const match = raw.match(/Episode\s+([0-9]+)/i);
+        return match ? match[1].trim() : "";
+    },
+};
 
 // ========== Site Configs ==========
 const SITE_CONFIGS: Record<string, SiteConfig> = {
@@ -29,6 +45,11 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
     "miruro.bz": MIRURO_CONFIG,
     "miruro.to": MIRURO_CONFIG,
     "miruro.ru": MIRURO_CONFIG,
+
+    "animetsu.net": ANIMETSU_CONFIG,
+    "animetsu.cc": ANIMETSU_CONFIG,
+    "animetsu.bz": ANIMETSU_CONFIG,
+    "animetsu.live": ANIMETSU_CONFIG,
 
     "crunchyroll.com": {
         watchPathIncludes: ["/watch", "/episode-"],
