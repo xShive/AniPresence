@@ -8,10 +8,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,add,arrow_back,dark_mode,light_mode,remove,settings,star,swap_horiz,unfold_more,visibility_off" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,add,arrow_back,dark_mode,light_mode,link,logout,person_off,remove,settings,star,swap_horiz,unfold_more,visibility_off" />
 </head>
 
 <body>
+    <!--
+       structure (top to bottom):
+        header.topbar        : logo + theme/account/settings icons
+        main.views           : main screen
+          section.discord-strip : "now watching" strip
+          section.panel         : controls (status dropdown + anime/manga toggle) + the poster grid
+        .modal-overlay (x2)  : floating cards over everything -
+          detail modal       : opens when you click a cover (info + edit)
+          account-overlay    : login state / stats
+        footer               : ghost toggle + github link
+    -->
     <header class="topbar">
         <div class="brand">
             <h1>AniPresence</h1>
@@ -20,7 +31,7 @@
 
         <div class="icons">
             <button class="icon-btn theme-btn material-symbols-outlined">dark_mode</button>
-            <button class="icon-btn material-symbols-outlined">account_circle</button>
+            <button class="icon-btn account-btn material-symbols-outlined">account_circle</button>
             <button class="icon-btn material-symbols-outlined">settings</button>
         </div>
     </header>
@@ -140,6 +151,55 @@
         </div>
     </div>
 
+    <!-- account modal -->
+    <div class="modal-overlay account-overlay hidden">      <!-- account-overlay for queryselect -->
+        <div class="modal-card">        
+            <button class="back-btn account-back material-symbols-outlined">arrow_back</button>
+
+            <div class="account-in hidden">
+                <div class="account-head">
+                    <span class="account-avatar material-symbols-outlined">account_circle</span>
+                    <div>
+                        <div class="account-name"></div>
+                        <div class="account-connected"><span class="account-dot"></span> Connected to MyAnimeList</div>
+                    </div>
+                </div>
+
+                <div class="account-stats">
+                    <div class="account-stat">
+                        <div class="account-stat-label">Mean score</div>
+                        <div class="account-stat-value account-mean"></div>
+                    </div>
+                    <div class="account-stat">
+                        <div class="account-stat-label">Days watched</div>
+                        <div class="account-stat-value account-days"></div>
+                    </div>
+                    <div class="account-stat">
+                        <div class="account-stat-label">Episodes</div>
+                        <div class="account-stat-value account-eps"></div>
+                    </div>
+                    <div class="account-stat">
+                        <div class="account-stat-label">Completed</div>
+                        <div class="account-stat-value account-completed"></div>
+                    </div>
+                </div>
+
+                <button class="account-disconnect">
+                    <span class="material-symbols-outlined">logout</span> Disconnect
+                </button>
+            </div>
+
+            <div class="account-out hidden">
+                <span class="account-empty-icon material-symbols-outlined">person_off</span>
+                <div class="account-empty-title">Not connected</div>
+                <p class="account-empty-text">Link your MyAnimeList account to sync your list, scores and activity.</p>
+                <button class="account-connect">
+                    <span class="material-symbols-outlined">link</span> Connect MyAnimeList
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="footer">
         <a class="github" href="https://github.com/xShive/AniPresence">
             <svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor" aria-hidden="true">
@@ -155,6 +215,7 @@
         </div>
     </div>
 
+    <script src="helpers.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

@@ -1,3 +1,10 @@
+// =====================================================================
+// scrapes what you're watching (title/episode/cover/timestamps) every 15s
+// and sends it to the Python app, routed through background.js.
+//
+// types (ScrapedData, VideoData, SiteConfig, SITE_CONFIGS) live in types.d.ts.
+// =====================================================================
+
 // ========== Setup ==========
 // check if the current website is in the config
 const currentHost = window.location.hostname.replace("www.", "");
@@ -5,10 +12,10 @@ const SITE = SITE_CONFIGS[currentHost];
 
 // ========== State ==========
 let isWatching = false;
-let kwikVideoData = null;
+let kwikVideoData: VideoData | null = null;
 
 // listen to background.js: if kwik video data arrives, store it for scrapeData()
-function handleVideoData(message) {
+function handleVideoData(message: VideoData) {
     if (message.type === "video_data") {
         kwikVideoData = message;
     }
@@ -18,7 +25,7 @@ chrome.runtime.onMessage.addListener(handleVideoData);
 
 // ========== URL Helpers ==========
 // check if the current URL is still on a watch page
-function pathMatches(pathIncludes) {
+function pathMatches(pathIncludes: string | string[]): boolean {
     if (!pathIncludes) return false;
     if (Array.isArray(pathIncludes)) {      // crunchyroll has two paths (array)
         return pathIncludes.some(function (p) {
@@ -30,38 +37,34 @@ function pathMatches(pathIncludes) {
 
 // ========== Cover Image Helpers ==========
 // fallback: read the cover from the page's hidden meta tags
-function getMetaCover() {
+function getMetaCover(): string {
     const meta =
-        document.querySelector("meta[property='og:image']") ||
-        document.querySelector("meta[name='og:image']") ||
-        document.querySelector("meta[name='twitter:image']");
+        document.querySelector<HTMLMetaElement>("meta[property='og:image']") ||
+        document.querySelector<HTMLMetaElement>("meta[name='og:image']") ||
+        document.querySelector<HTMLMetaElement>("meta[name='twitter:image']");
     return meta ? meta.content || meta.getAttribute("content") || "" : "";
 }
 
 // Extract a usable image URL from a cover element: an <img> src, a CSS background-image, or a nested <img>.
-function getCoverUrl(el) {
+function getCoverUrl(el: Element | null): string {
     if (!el) return getMetaCover();
-    if (el.tagName === "IMG") return el.src || getMetaCover();
+    if (el.tagName === "IMG") return (el as HTMLImageElement).src || getMetaCover();
 
-    const bgImage = el.style && el.style.backgroundImage;
+    const bgImage = (el as HTMLElement).style && (el as HTMLElement).style.backgroundImage;
     if (bgImage && bgImage !== "none") {
         const match = bgImage.match(/url\((?:['"]?)(.*?)(?:['"]?)\)/);
         if (match) return match[1];
     }
 
-    const nestedImg = el.querySelector && el.querySelector("img");
+    const nestedImg = el.querySelector("img");
     if (nestedImg) return nestedImg.src || getMetaCover();
 
     return el.getAttribute("src") || getMetaCover();
 }
 
 // ========== Scraper ==========
-// convert seconds into a "m:ss" time string
-function formatTime(seconds) {
-    return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
-}
-
-function scrapeData() {
+// (formatTime + LOCAL_URL now live in helpers.ts, loaded first)
+function scrapeData(): ScrapedData | null {
     // not a supported site, or not on a watch page
     if (!SITE) return null;
     if (!pathMatches(SITE.watchPathIncludes)) return null;
@@ -71,10 +74,10 @@ function scrapeData() {
     const titleEl = document.querySelector(selectors.episodeTitle);
     const numberEl = document.querySelector(selectors.episodeNum);
     const coverEl = document.querySelector(selectors.cover);
-    const videoEl = document.querySelector(selectors.video);
+    const videoEl = document.querySelector<HTMLVideoElement>(selectors.video);
 
     // read timestamps from the video element (or from kwik for animepahe)
-    let currentTime, duration, isPaused;
+    let currentTime: string, duration: string, isPaused: boolean;
     if (videoEl) {
         currentTime = videoEl.currentTime != null ? formatTime(videoEl.currentTime) : "";
         duration = videoEl.duration ? formatTime(videoEl.duration) : "";
@@ -106,7 +109,7 @@ function scrapeData() {
 // ========== Communication with Python ==========
 // route requests through background.js (a direct localhost request triggers a browser security popup)
 // put all scraped data in an object, pass to background.js
-function bgFetch(url, method, body = null) {
+function bgFetch(url: string, method: string, body: ScrapedData | null = null): Promise<any> {
     return new Promise(function (resolve) {
         chrome.runtime.sendMessage({
             type: "fetch",
@@ -119,7 +122,7 @@ function bgFetch(url, method, body = null) {
 }
 
 // send the current watch data to the Python app
-async function sendData(data) {
+async function sendData(data: ScrapedData) {
     await bgFetch(`${LOCAL_URL}/watching`, "POST", data);
 }
 
@@ -148,7 +151,7 @@ function startScraping() {
 }
 
 // wait for the page to finish loading before starting the scraper
-function waitForPageReady(callback) {
+function waitForPageReady(callback: () => void) {
     if (document.readyState === "complete" || document.readyState === "interactive") {
         callback();
     } else {

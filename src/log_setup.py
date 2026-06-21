@@ -13,6 +13,6 @@ def setup_logging():
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.StreamHandler(),
-            RotatingFileHandler(log_location)
+            RotatingFileHandler(log_location, maxBytes=1_000_000, backupCount=3)
         ]
     )

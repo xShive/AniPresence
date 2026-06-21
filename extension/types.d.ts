@@ -54,3 +54,46 @@ interface EntryUpdate {
   progress: number;
   score: number;
 }
+
+// the object content.js scrapes off the page and sends to /watching
+interface ScrapedData {
+  anime_title: string;
+  episode_title: string;
+  episode: string;
+  current_time: string;
+  duration: string;
+  cover: string;
+  paused: boolean;
+}
+
+// the message kwik.js sends out of the iframe (and content.js stores)
+interface VideoData {
+  type: "video_data";
+  currentTime: string;
+  duration: string;
+  paused: boolean;
+}
+
+// one site's scraping data
+interface SiteConfig {
+  watchPathIncludes: string | string[];
+  selectors: {
+    animeTitle: string;
+    episodeTitle: string | null;
+    episodeNum: string | null;
+    cover: string;
+    video: string;
+  };
+  parseEpisodeTitle?: (raw: string) => string;
+  parseEpisodeNumber?: (raw: string) => string;
+  parseCoverUrl?: (url: string) => string;
+}
+
+// the message content.ts sends to background.js to be fetched
+interface FetchMessage {
+  type: "fetch";
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: ScrapedData | null;
+}

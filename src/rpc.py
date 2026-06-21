@@ -199,7 +199,7 @@ def stopped():
     current_episode_line = None
     current_episode_title = None
     current_cover = None
-    print("Presence cleared")
+    logger.info("Presence cleared.")
     return jsonify({ "status": "ok" })
 
 @app.route('/update', methods=['GET'])

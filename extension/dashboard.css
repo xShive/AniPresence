@@ -1,3 +1,8 @@
+/* =====================================================================
+   order: themes -> global -> header -> discord strip -> modals
+   (detail + account) -> controls/dropdown -> poster grid -> footer
+   ===================================================================== */
+
 /* ========== Themes ========== */
 :root {                         /* default */
     --bg:          #EEEFF6;
@@ -399,6 +404,148 @@ body {                              /* entire <body> tag*/
 .detail-mal:active {
     transform: scale(0.98);
 }
+
+
+/* ========== ACCOUNT MODAL ========== */
+.account-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0 14px;
+}
+
+.account-avatar {
+    color: var(--btn);
+    font-size: 52px;            /* big account_circle as the avatar */
+    font-variation-settings: 'FILL' 1;
+}
+
+.account-name {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--text);
+}
+
+.account-connected {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.account-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #59D97F;        /* green "connected" dot */
+}
+
+.account-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.account-stat {
+    background: var(--pill);
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.account-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.account-stat-value {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--text);
+    margin-top: 2px;
+}
+
+.account-disconnect {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: var(--btn);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.account-disconnect:hover { background: var(--btn-hover); }
+.account-disconnect:active { transform: scale(0.98); }
+.account-disconnect .material-symbols-outlined { font-size: 16px; }
+
+/* signed-out state */
+.account-out {
+    text-align: center;
+    padding: 14px 10px 8px;
+}
+
+.account-empty-icon {
+    font-size: 30px;
+    color: var(--text-muted);
+    background: var(--pill);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 12px;
+}
+
+/* two classes beat Google's .material-symbols-outlined { display: inline-block }, so flex actually applies and the glyph centres */
+.account-empty-icon.material-symbols-outlined {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-empty-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.account-empty-text {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    max-width: 240px;
+    margin: 0 auto 16px;
+}
+
+.account-connect {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 10px;
+    background: #2E51A2;        /* MAL brand blue */
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.account-connect:hover { filter: brightness(1.1); }
+.account-connect:active { transform: scale(0.98); }
+.account-connect .material-symbols-outlined { font-size: 16px; }
 
 
 /* ========== HEADER ========== */

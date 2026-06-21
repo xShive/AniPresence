@@ -1,3 +1,7 @@
+// =====================================================================
+// logic for the extension
+// =====================================================================
+
 // ========== grab elements ==========
 const versionText = document.querySelector(".version");
 const statusWrap = document.querySelector(".status-wrap");
@@ -40,9 +44,25 @@ const synopsisToggle = document.querySelector(".synopsis-toggle");
 // the anime/manga the modal is currently showing (so the +/- buttons know what to edit)
 let currentDetailItem: Anime | Manga | null = null;
 
+// account modal
+const accountOverlay = document.querySelector<HTMLElement>(".account-overlay");
+const accountBtn = document.querySelector(".account-btn");
+const accountBack = document.querySelector(".account-back");
+const accountIn = document.querySelector<HTMLElement>(".account-in");
+const accountOut = document.querySelector<HTMLElement>(".account-out");
+const accountName = document.querySelector(".account-name");
+const accountMean = document.querySelector(".account-mean");
+const accountDays = document.querySelector(".account-days");
+const accountEps = document.querySelector(".account-eps");
+const accountCompleted = document.querySelector(".account-completed");
+const accountConnect = document.querySelector(".account-connect");
+const accountDisconnect = document.querySelector(".account-disconnect");
+
+let userInfo: any = null;   // the /mal/me profile, or null when logged out
+
 
 // ========== data ==========
-const LOCAL_URL = "http://127.0.0.1:5001";   // our local Python server
+// LOCAL_URL now comes from helpers.js (loaded before dashboard.js)
 const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
 const mangaStatuses = ["Reading", "Completed", "On hold", "Dropped", "Plan to read"];
 let fullAnimeList: Anime[] = [];
@@ -121,8 +141,8 @@ async function loadLists() {
     // check if we have lists in cache
     const cached = await chrome.storage.local.get(["animeList", "mangaList"]);
     if (cached.animeList && cached.mangaList) {
-        fullAnimeList = cached.animeList;
-        fullMangaList = cached.mangaList;
+        fullAnimeList = cached.animeList as Anime[];   // storage returns loose types; we know the shape
+        fullMangaList = cached.mangaList as Manga[];
         renderPosters();
     }
 
@@ -290,6 +310,60 @@ function closeDropdownsOnOutsideClick(event: MouseEvent) {
     }
 }
 
+
+// ========== account modal ==========
+// fetch the profile (or null) and paint the right state
+async function loadAccount() {
+    const resp = await fetch(`${LOCAL_URL}/mal/me`);
+    userInfo = await resp.json();   // null when not logged in
+    renderAccount();
+}
+
+function renderAccount() {
+    if (userInfo) {
+        accountOut.classList.add("hidden");
+        accountIn.classList.remove("hidden");
+
+        const stats = userInfo.anime_statistics || {};
+        accountName.textContent = userInfo.name ?? "";
+        accountMean.textContent = stats.mean_score != null ? String(stats.mean_score) : "—";
+        accountDays.textContent = stats.num_days_watched != null ? String(stats.num_days_watched) : "—";
+        accountEps.textContent = stats.num_episodes != null ? stats.num_episodes.toLocaleString() : "—";
+        accountCompleted.textContent = stats.num_items_completed != null ? String(stats.num_items_completed) : "—";
+    } else {
+        accountIn.classList.add("hidden");
+        accountOut.classList.remove("hidden");
+    }
+}
+
+function openAccount() {
+    accountOverlay.classList.remove("hidden");
+}
+
+function closeAccount() {
+    accountOverlay.classList.add("closing");
+    accountOverlay.addEventListener("animationend", function () {
+        accountOverlay.classList.remove("closing");
+        accountOverlay.classList.add("hidden");
+    }, { once: true });
+}
+
+// connect: kick off MAL login (opens a browser tab via Python)
+function connectMal() {
+    fetch(`${LOCAL_URL}/mal/login`);
+}
+
+// disconnect: drop the token, clear data, flip to the signed-out state
+async function disconnectMal() {
+    await fetch(`${LOCAL_URL}/mal/logout`, { method: "POST" });
+    userInfo = null;
+    fullAnimeList = [];
+    fullMangaList = [];
+    chrome.storage.local.remove(["animeList", "mangaList"]);   // wipe the cache too
+    renderPosters();        // clears the grid
+    renderAccount();        // shows the connect prompt
+}
+
 // fill the modal with the clicked item, then show it
 function openDetail(item: Anime | Manga) {
     currentDetailItem = item;   // remember it so the +/- buttons can edit it
@@ -373,7 +447,7 @@ async function update_status(status: EntryUpdate) {
 // ========== renderPosters ==========
 function renderPosters() {
     const isManga = modeSwitch.classList.contains("manga");
-    const list = isManga ? fullMangaList : fullAnimeList;
+    const list = (isManga ? fullMangaList : fullAnimeList) || [];   // || [] -> never crash on a null list (logged out)
     const status = statusText.textContent.toLowerCase().replace(/ /g, "_");
 
     const grid = document.querySelector(".grid");
@@ -436,11 +510,23 @@ synopsisToggle.addEventListener("click", function () {
 */
 
 
+// ========== boot ==========
+// check login first: logged in -> load lists; logged out -> show the connect prompt (no crash)
+async function boot() {
+    await loadAccount();
+    if (userInfo) {
+        loadLists();
+    } else {
+        openAccount();
+    }
+}
+
+
 // ========== fill versionm, menu, add listeners ==========
 versionText.textContent = "v" + chrome.runtime.getManifest().version;
 loadTheme();
 fillStatusMenu(animeStatuses);
-loadLists();
+boot();
 statusButton.addEventListener("click", toggleStatusMenu);
 modeSwitch.addEventListener("click", toggleMode);
 themeButton.addEventListener("click", toggleTheme);
@@ -449,5 +535,10 @@ epMinus.addEventListener("click", function () { changeProgress(-1); });
 epPlus.addEventListener("click", function () { changeProgress(1); });
 detailStatusDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailStatusDd.classList.toggle("open"); });
 detailScoreDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailScoreDd.classList.toggle("open"); });
+accountBtn.addEventListener("click", openAccount);
+accountBack.addEventListener("click", closeAccount);
+accountConnect.addEventListener("click", connectMal);
+accountDisconnect.addEventListener("click", disconnectMal);
+accountOverlay.addEventListener("click", function (event) { if (event.target === accountOverlay) closeAccount(); });
 document.addEventListener("click", closeMenuOnOutsideClick);
 document.addEventListener("click", closeDropdownsOnOutsideClick);

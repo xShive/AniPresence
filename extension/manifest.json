@@ -37,11 +37,11 @@
     "content_scripts": [
         {
             "matches": ["https://www.miruro.tv/*", "https://www.miruro.bz/*", "https://www.miruro.to/*", "https://www.miruro.ru/*", "https://www.crunchyroll.com/*", "https://crunchyroll.com/*", "https://animepahe.pw/*"],
-            "js": ["config.js", "content.js"]
+            "js": ["helpers.js", "config.js", "content.js"]
         },
         {
             "matches": ["https://kwik.cx/*"],
-            "js": ["kwik.js"],
+            "js": ["helpers.js", "kwik.js"],
             "all_frames": true
         }
     ]

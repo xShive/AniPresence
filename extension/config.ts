@@ -1,7 +1,14 @@
-const LOCAL_URL = "http://127.0.0.1:5001";
+// =====================================================================
+// loaded after helpers.js but before content.js (see manifest), so SITE_CONFIGS
+// is a shared global content.ts can read. each site entry says which URLs count
+// as a "watch page" and which CSS selectors to scrape. shape = SiteConfig (types.d.ts)
+
+// in manifest, config, helpers and content are within the same scope, so they
+// can use eachother's variables
+// =====================================================================
 
 // ========== Miruro Config ==========
-const MIRURO_CONFIG = {
+const MIRURO_CONFIG: SiteConfig = {
     watchPathIncludes: "/watch",
     selectors: {
         animeTitle:   ".anime-title",
@@ -17,7 +24,7 @@ const MIRURO_CONFIG = {
 
 
 // ========== Site Configs ==========
-const SITE_CONFIGS = {
+const SITE_CONFIGS: Record<string, SiteConfig> = {
     "miruro.tv": MIRURO_CONFIG,
     "miruro.bz": MIRURO_CONFIG,
     "miruro.to": MIRURO_CONFIG,
@@ -49,7 +56,7 @@ const SITE_CONFIGS = {
             episodeTitle: null,
             episodeNum:   "#episodeMenu",
             cover:        ".anime-poster",
-            video:        "video",      // the player is a kwik.cx iframe that injects kwik.js into kwic.cx
+            video:        "video",      // the player is a kwik.cx iframe that injects kwik.js into kwik.cx
         },
         parseEpisodeNumber: function (raw) {
             if (!raw) return "";
