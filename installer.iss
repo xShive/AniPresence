@@ -1,6 +1,6 @@
 [Setup]
 AppName=AniPresence
-AppVersion=1.4.0
+AppVersion=1.4.1
 DefaultDirName={autopf}\AniPresence
 PrivilegesRequired=admin
 OutputDir=.\Output
