@@ -33,9 +33,12 @@ AniPresence is a lightweight hub for all your favorite anime and manga. Track yo
 
 ## Supported Websites
 
-- `crunchyroll.com`
-- `miruro.tv`, `miruro.bz`, `miruro.to`, `miruro.ru`
-- `animepahe.pw`
+| Website | Mirrors | Type |
+| :------ | :------ | :--- |
+| [Animepahe](https://animepahe.pw/) | .pw | Anime |
+| [Animetsu](https://animetsu.bz/) | .bz, .cc, .live, .net | Anime |
+| [Crunchyroll](https://www.crunchyroll.com/) | .com | Anime |
+| [Miruro](https://miruro.to/) | .bz, .ru, .to, .tv | Anime |
 
 ## FAQ
 
@@ -47,3 +50,6 @@ A: The source code of this project is publicly available, which you can use to v
 
 ### Q: What about my MyAnimeList password?
 A: You sign in through MyAnimeList's own official login page, so AniPresence never sees or stores your password. It only keeps the access token MAL hands back, saved locally on your machine.
+
+### Q: How do I fix the 400 Bad Request error when connecting my MAL account?
+A: Open your terminal, run `netsh winsock reset` and reboot your pc. Try connecting again. Why does this fix it? Well, Window Sockets is the part of WIndows that handles all network connections for every program. Winsock is basically the central switchboard for outbound connections. It lets other programs insert themselves into that switchboard (LSP), like VPNs and antivirusses. One of these probably got corrupted and started rejecting connections from certain apps, like `python.exe`, resulting in that local `PermissionError`.
