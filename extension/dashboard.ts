@@ -1,6 +1,6 @@
 // =====================================================================
 // flow of data (the main loop):
-//   loadLists()     -> fetch your mal lists from the python api into fullAnimeList / fullMangaList
+//   loadLists()     -> fetch mal lists from the python api into fullAnimeList / fullMangaList
 //   renderPosters() -> turn that list into clickable posters in the grid
 //   click a poster  -> openDetail(item) fills the modal boxes + unhides it,
 //                      and stores the clicked anime in currentDetailItem.
@@ -88,6 +88,7 @@ let fullAnimeList: Anime[] = [];
 let fullMangaList: Manga[]  = [];
 let currentDetailItem: Anime | Manga | null = null;   // the anime/manga the modal is showing (so the +/- buttons know what to edit)
 let userInfo: any = null;                             // the /mal/me profile, or null when logged out
+let listEdited = false;                               // did you edit a list since load? -> ignore the late background fetch if so
 
 
 // ========== dark mode ==========
@@ -160,26 +161,29 @@ function toggleMode() {
 // ========== lists (load + render the grid) ==========
 // fetch once on load: show the cached copy instantly, then refetch and re-save
 async function loadLists() {
-    // check if we have lists in cache
+    // check if we have lists in cache (fast)
     const cached = await chrome.storage.local.get(["animeList", "mangaList"]);
     if (cached.animeList && cached.mangaList) {
         fullAnimeList = cached.animeList as Anime[];   // storage returns loose types; we know the shape
         fullMangaList = cached.mangaList as Manga[];
-        renderPosters();
+        renderPosters();    // render for first time through cache
     }
 
-    // fetch new list in background
+    // fetch new list in background (slow)
     const [animeResp, mangaResp] = await Promise.all([
         fetch(`${LOCAL_URL}/mal/me/animelist`),
         fetch(`${LOCAL_URL}/mal/me/mangalist`)
     ]);
-    fullAnimeList = await animeResp.json();
-    fullMangaList = await mangaResp.json();
-    renderPosters();        // re-render
-    loadStatus();
+    // if you edited while this fetch was still flying, its reply is older than your edit -> don't let it overwrite you
+    if (!listEdited) {
+        fullAnimeList = await animeResp.json();     // only use response if flag isnt true
+        fullMangaList = await mangaResp.json();
+        renderPosters();        // re-render
 
-    // save the new lists so next open is instant
-    chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
+        // save the new lists so next open is instant
+        chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
+    }
+    loadStatus();
 }
 
 // build a poster for every item in the current list (anime or manga) that matches the picked status
@@ -483,6 +487,21 @@ function pushUpdate() {
         progress: progress,
         score: item.score,
     });
+
+    // bug: you click card from the cache array, so currentDetailItem points into it. (cuz MAL is still fetching)
+    // then mal fetch finishes and does fullAnimeList = the new mal array
+    // + edits the cache array's object, but the save in pushUpdate below saves fullAnimeList = the mal array,
+    // which never got edit -> cache ends up with mal's old number
+    const list: (Anime | Manga)[] = isManga ? fullMangaList : fullAnimeList;
+    for (let i = 0; i < list.length; i++) {
+        if (list[i].id === item.id) {
+            list[i] = item;         // item = from cache // list = new
+            break;
+        }
+    }
+
+    chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
+    listEdited = true;   // our local copy is now newer than any in-flight fetch -> tell loadLists to back off
 }
 
 // send an EntryUpdate to the python api (which forwards it to mal)
