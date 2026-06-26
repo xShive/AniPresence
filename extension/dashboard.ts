@@ -1,5 +1,18 @@
 // =====================================================================
-// logic for the extension
+// flow of data (the main loop):
+//   loadLists()     -> fetch your mal lists from the python api into fullAnimeList / fullMangaList
+//   renderPosters() -> turn that list into clickable posters in the grid
+//   click a poster  -> openDetail(item) fills the modal boxes + unhides it,
+//                      and stores the clicked anime in currentDetailItem.
+//                      that item IS the same object sitting inside fullAnimeList
+//                      (a reference, not a copy), so editing it edits the list for free
+//   edit (+/-, status, score) -> changeProgress / onStatusPick / onScorePick edit currentDetailItem,
+//                      update the screen, then pushUpdate()
+//   pushUpdate()    -> the Anime/Manga types carry lots of display stuff we got FROM mal but
+//                      dont send back, so we build a small dict (EntryUpdate) with only what mal
+//                      needs to write: id, status, progress, score
+//   update_status() -> POST that small dict to python -> mal
+//
 // =====================================================================
 
 // ========== grab elements ==========
@@ -44,9 +57,6 @@ const epMinus = document.querySelector(".ep-minus");
 const epPlus = document.querySelector(".ep-plus");
 const synopsisToggle = document.querySelector(".synopsis-toggle");
 
-// the anime/manga the modal is currently showing (so the +/- buttons know what to edit)
-let currentDetailItem: Anime | Manga | null = null;
-
 // account modal
 const accountOverlay = document.querySelector<HTMLElement>(".account-overlay");
 const accountBtn = document.querySelector(".account-btn");
@@ -69,15 +79,32 @@ const updateBtn = document.querySelector<HTMLButtonElement>(".update-btn");
 const settingsBtn = document.querySelector(".settings-btn")
 const settingsBack = document.querySelector(".settings-back");
 
-let userInfo: any = null;   // the /mal/me profile, or null when logged out
 
-
-// ========== data ==========
+// ========== state ==========
 // LOCAL_URL now comes from helpers.js (loaded before dashboard.js)
 const animeStatuses = ["Watching", "Completed", "On hold", "Dropped", "Plan to watch"];
 const mangaStatuses = ["Reading", "Completed", "On hold", "Dropped", "Plan to read"];
 let fullAnimeList: Anime[] = [];
 let fullMangaList: Manga[]  = [];
+let currentDetailItem: Anime | Manga | null = null;   // the anime/manga the modal is showing (so the +/- buttons know what to edit)
+let userInfo: any = null;                             // the /mal/me profile, or null when logged out
+
+
+// ========== dark mode ==========
+function toggleTheme() {
+    const isDark = document.body.classList.toggle("dark");   // toggle returns true if "dark" is now on
+    themeButton.textContent = isDark ? "light_mode" : "dark_mode";
+    chrome.storage.local.set({ theme: isDark ? "dark" : "light" });   // remember the choice
+}
+
+// apply the saved theme on open
+async function loadTheme() {
+    const data = await chrome.storage.local.get("theme");
+    if (data.theme === "dark") {
+        document.body.classList.add("dark");
+        themeButton.textContent = "light_mode";
+    }
+}
 
 
 // ========== status dropdown ==========
@@ -130,24 +157,8 @@ function toggleMode() {
 }
 
 
-// ========== dark mode ==========
-function toggleTheme() {
-    const isDark = document.body.classList.toggle("dark");   // toggle returns true if "dark" is now on
-    themeButton.textContent = isDark ? "light_mode" : "dark_mode";
-    chrome.storage.local.set({ theme: isDark ? "dark" : "light" });   // remember the choice
-}
-
-// apply the saved theme on open
-async function loadTheme() {
-    const data = await chrome.storage.local.get("theme");
-    if (data.theme === "dark") {
-        document.body.classList.add("dark");
-        themeButton.textContent = "light_mode";
-    }
-}
-
-
-// ========== fetch once on load ==========
+// ========== lists (load + render the grid) ==========
+// fetch once on load: show the cached copy instantly, then refetch and re-save
 async function loadLists() {
     // check if we have lists in cache
     const cached = await chrome.storage.local.get(["animeList", "mangaList"]);
@@ -169,6 +180,42 @@ async function loadLists() {
 
     // save the new lists so next open is instant
     chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
+}
+
+// build a poster for every item in the current list (anime or manga) that matches the picked status
+function renderPosters() {
+    const isManga = modeSwitch.classList.contains("manga");
+    const list = (isManga ? fullMangaList : fullAnimeList) || [];   // || [] -> never crash on a null list (logged out)
+    const status = statusText.textContent.toLowerCase().replace(/ /g, "_");
+
+    const grid = document.querySelector(".grid");
+    grid.innerHTML = "";                       // clear old posters
+
+    for (const item of list) {
+        if (item.status !== status) continue;  // skip ones that don't match
+
+        const card = document.createElement("div");
+        card.className = "poster";             // wrapper: anchors the overlay
+
+        const img = document.createElement("img");
+        img.className = "poster-img";
+        img.src = item.cover ?? "";            // ?? "" handles a null cover
+
+        const overlay = document.createElement("div");
+        overlay.className = "poster-overlay";
+        overlay.innerHTML =
+            `<div class="poster-title">${item.title ?? ""}</div>` +
+            `<div class="poster-meta">★ ${item.score ?? "—"}</div>`;
+
+        // click a cover -> open the detail modal filled with this item
+        card.addEventListener("click", function () {
+            openDetail(item);
+        });
+
+        card.appendChild(img);
+        card.appendChild(overlay);
+        grid.appendChild(card);
+    }
 }
 
 
@@ -234,7 +281,8 @@ function findAnimeByTitle(title: string | null): Anime | null {
     return null;
 }
 
-// ========== detail modal ==========
+
+// ========== detail modal: dropdown + countdown helpers ==========
 // turn a MAL status pretty without underscores
 function prettyStatus(status: string | null): string {
     if (!status) return "—";
@@ -280,21 +328,116 @@ function fillDropdown(wrap: HTMLElement, options: { value: string; label: string
     }
 }
 
-// build an EntryUpdate from the open item's CURRENT values and send it to MAL.
-// every edit (episodes, status, score) funnels through here, so it always sends a full, consistent snapshot.
-function pushUpdate() {
+// how long until the next episode airs
+// MAL's broadcast day + time are in JST (UTC+9) so we do math in JST then convert back.
+function nextEpisodeIn(broadcast: { day_of_the_week?: string; start_time?: string } | null | undefined): string | null {
+    if (!broadcast || !broadcast.day_of_the_week || !broadcast.start_time) return null;
+
+    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const targetDay = days.indexOf(broadcast.day_of_the_week.toLowerCase());
+    if (targetDay === -1) return null;
+
+    const [hh, mm] = broadcast.start_time.split(":").map(Number);
+
+    const now = new Date();
+    // shift "now" +9h so its UTC fields read as the current JST wall-clock
+    const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+
+    const dayDiff = (targetDay - jstNow.getUTCDay() + 7) % 7;   // days until that weekday (in JST)
+
+    // build the target JST wall-clock moment, then convert that back to a real UTC instant (-9h)
+    const targetJst = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate() + dayDiff, hh, mm, 0);
+    let airTime = targetJst - 9 * 60 * 60 * 1000;
+
+    if (airTime <= now.getTime()) {           // already passed this week -> jump a week
+        airTime += 7 * 24 * 60 * 60 * 1000;
+    }
+
+    const diffMin = Math.floor((airTime - now.getTime()) / 60000);
+    const d = Math.floor(diffMin / (60 * 24));
+    const h = Math.floor((diffMin % (60 * 24)) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h`;
+    return `${diffMin % 60}m`;
+}
+
+
+// ========== detail modal: open / close ==========
+// fill the modal with the clicked item, then show it
+function openDetail(item: Anime | Manga) {
+    currentDetailItem = item;   // remember it so the +/- buttons can edit it
+
+    const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
+    const done  = (item as Anime).watched ?? (item as Manga).chapters_read;
+    const isManga = "num_chapters" in item;
+
+    detailCover.src = item.cover ?? "";
+    detailTitle.textContent = item.title_en || item.title || "Untitled";   // prefer English, fall back to romaji
+    detailRomaji.textContent = item.title ?? "";
+    detailKanji.textContent = item.title_ja ?? "";
+    detailType.textContent = item.media_type ? item.media_type.toUpperCase() : "—";
+    detailMean.textContent = item.mean != null ? String(item.mean) : "—";
+    detailRank.textContent = item.rank != null ? "#" + item.rank : "—";
+    detailEpisode.textContent = isManga ? "Chapters" : "Episodes";
+    detailProgress.textContent = `${done ?? 0} / ${total || "?"}`;
+    fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), item.status ?? "", onStatusPick);
+    fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
+    detailSynopsis.textContent = item.synopsis || "No synopsis available.";
+    detailMal.href = `https://myanimelist.net/anime/${item.id}`;
+
+    // next-episode countdown: only for shows that are actually still airing
+    const isAiring = (item as Anime).airing_status === "currently_airing";
+    const countdown = isAiring ? nextEpisodeIn((item as Anime).broadcast) : null;
+    if (countdown) {
+        detailCountdown.textContent = countdown;
+        countdownRow.classList.remove("hidden");
+    } else {
+        countdownRow.classList.add("hidden");
+    }
+
+    detailSynopsis.classList.remove("expanded");        // reset each time new modal opens
+    synopsisToggle.textContent = "Show more...";
+    detailModal.classList.remove("hidden");   // show the overlay
+}
+
+function closeDetail() {
+    detailModal.classList.add("closing");                 // play the exit animation
+
+    detailModal.addEventListener("animationend", function () {      // animation fires when animation finishes
+        detailModal.classList.remove("closing");
+        detailModal.classList.add("hidden");              // remove it from the page
+    }, { once: true });
+}
+
+
+// ========== detail modal: edits ==========
+// bump the episode/chapter count by +1 or -1 and push it to MAL
+function changeProgress(delta: number) {
     if (!currentDetailItem) return;
     const item = currentDetailItem;
-    const isManga = "num_chapters" in item;
-    const progress = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
+    const isManga = "num_chapters" in item;    // manga objects have num_chapters, anime don't
 
-    update_status({
-        is_manga: isManga,
-        id: item.id,
-        target_status: item.status,
-        progress: progress,
-        score: item.score,
-    });
+    const total   = (isManga ? (item as Manga).num_chapters : (item as Anime).num_episodes) || 0;
+    const current = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
+
+    let next = current + delta;
+    if (next < 0) next = 0;                     // can't go below 0
+    if (total && next > total) next = total;    // can't exceed the total (only if the total is known)
+    if (next === current) return;               // nothing changed -> don't bother MAL
+
+    // keep our local object in sync so reopening shows the new number
+    if (isManga) { (item as Manga).chapters_read = next; }
+    else         { (item as Anime).watched = next; }
+
+    detailProgress.textContent = `${next} / ${total || "?"}`;   // update the screen right away
+
+    // reaching the last episode/chapter auto-marks it completed
+    if (total && next === total && item.status !== "completed") {
+        item.status = "completed";
+        detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";   // reflect it in the dropdown too
+    }
+
+    pushUpdate();   // send the full snapshot to MAL
 }
 
 // the user picked a new status
@@ -319,6 +462,36 @@ function closeDropdownsOnOutsideClick(event: MouseEvent) {
             dd.classList.remove("open");
         }
     }
+}
+
+
+// ========== detail modal: build + send the update ==========
+// build the small write-only dict from the open item, then send it.
+// the Anime/Manga types carry lots of display stuff we got FROM mal but dont send back,
+// so we build a slim EntryUpdate with only what mal needs to write (id, status, progress, score).
+// every edit (episodes, status, score) funnels through here, so it always sends a full, consistent dict.
+function pushUpdate() {
+    if (!currentDetailItem) return;
+    const item = currentDetailItem;
+    const isManga = "num_chapters" in item;
+    const progress = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
+
+    update_status({
+        is_manga: isManga,
+        id: item.id,
+        target_status: item.status,
+        progress: progress,
+        score: item.score,
+    });
+}
+
+// send an EntryUpdate to the python api (which forwards it to mal)
+async function update_status(status: EntryUpdate) {
+    await fetch(`${LOCAL_URL}/mal/me/update/status`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(status)
+    })
 }
 
 
@@ -375,172 +548,8 @@ async function disconnectMal() {
     renderAccount();        // shows the connect prompt
 }
 
-// how long until the next episode airs
-// MAL's broadcast day + time are in JST (UTC+9) so we do math in JST then convert back.
-function nextEpisodeIn(broadcast: { day_of_the_week?: string; start_time?: string } | null | undefined): string | null {
-    if (!broadcast || !broadcast.day_of_the_week || !broadcast.start_time) return null;
 
-    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    const targetDay = days.indexOf(broadcast.day_of_the_week.toLowerCase());
-    if (targetDay === -1) return null;
-
-    const [hh, mm] = broadcast.start_time.split(":").map(Number);
-
-    const now = new Date();
-    // shift "now" +9h so its UTC fields read as the current JST wall-clock
-    const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-
-    const dayDiff = (targetDay - jstNow.getUTCDay() + 7) % 7;   // days until that weekday (in JST)
-
-    // build the target JST wall-clock moment, then convert that back to a real UTC instant (-9h)
-    const targetJst = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate() + dayDiff, hh, mm, 0);
-    let airTime = targetJst - 9 * 60 * 60 * 1000;
-
-    if (airTime <= now.getTime()) {           // already passed this week -> jump a week
-        airTime += 7 * 24 * 60 * 60 * 1000;
-    }
-
-    const diffMin = Math.floor((airTime - now.getTime()) / 60000);
-    const d = Math.floor(diffMin / (60 * 24));
-    const h = Math.floor((diffMin % (60 * 24)) / 60);
-    if (d > 0) return `${d}d ${h}h`;
-    if (h > 0) return `${h}h`;
-    return `${diffMin % 60}m`;
-}
-
-// fill the modal with the clicked item, then show it
-function openDetail(item: Anime | Manga) {
-    currentDetailItem = item;   // remember it so the +/- buttons can edit it
-
-    const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
-    const done  = (item as Anime).watched ?? (item as Manga).chapters_read;
-    const isManga = "num_chapters" in item;
-
-    detailCover.src = item.cover ?? "";
-    detailTitle.textContent = item.title_en || item.title || "Untitled";   // prefer English, fall back to romaji
-    detailRomaji.textContent = item.title ?? "";
-    detailKanji.textContent = item.title_ja ?? "";
-    detailType.textContent = item.media_type ? item.media_type.toUpperCase() : "—";
-    detailMean.textContent = item.mean != null ? String(item.mean) : "—";
-    detailRank.textContent = item.rank != null ? "#" + item.rank : "—";
-    detailEpisode.textContent = isManga ? "Chapters" : "Episodes";
-    detailProgress.textContent = `${done ?? 0} / ${total || "?"}`;
-    fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), item.status ?? "", onStatusPick);
-    fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
-    detailSynopsis.textContent = item.synopsis || "No synopsis available.";
-    detailMal.href = `https://myanimelist.net/anime/${item.id}`;
-
-    // next-episode countdown: only for shows that are actually still airing
-    const isAiring = (item as Anime).airing_status === "currently_airing";
-    const countdown = isAiring ? nextEpisodeIn((item as Anime).broadcast) : null;
-    if (countdown) {
-        detailCountdown.textContent = countdown;
-        countdownRow.classList.remove("hidden");
-    } else {
-        countdownRow.classList.add("hidden");
-    }
-
-    detailSynopsis.classList.remove("expanded");        // reset each time new modal opens
-    synopsisToggle.textContent = "Show more...";
-    detailModal.classList.remove("hidden");   // show the overlay
-}
-
-function closeDetail() {
-    detailModal.classList.add("closing");                 // play the exit animation
-
-    detailModal.addEventListener("animationend", function () {      // animation fires when animation finishes
-        detailModal.classList.remove("closing");
-        detailModal.classList.add("hidden");              // remove it from the page
-    }, { once: true });
-}
-
-// bump the episode/chapter count by +1 or -1 and push it to MAL
-function changeProgress(delta: number) {
-    if (!currentDetailItem) return;
-    const item = currentDetailItem;
-    const isManga = "num_chapters" in item;    // manga objects have num_chapters, anime don't
-
-    const total   = (isManga ? (item as Manga).num_chapters : (item as Anime).num_episodes) || 0;
-    const current = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
-
-    let next = current + delta;
-    if (next < 0) next = 0;                     // can't go below 0
-    if (total && next > total) next = total;    // can't exceed the total (only if the total is known)
-    if (next === current) return;               // nothing changed -> don't bother MAL
-
-    // keep our local object in sync so reopening shows the new number
-    if (isManga) { (item as Manga).chapters_read = next; }
-    else         { (item as Anime).watched = next; }
-
-    detailProgress.textContent = `${next} / ${total || "?"}`;   // update the screen right away
-
-    // reaching the last episode/chapter auto-marks it completed
-    if (total && next === total && item.status !== "completed") {
-        item.status = "completed";
-        detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";   // reflect it in the dropdown too
-    }
-
-    pushUpdate();   // send the full snapshot to MAL
-}
-
-// click the bg to close
-detailModal.addEventListener("click", function (event) {
-    if (event.target === detailModal) {
-        closeDetail();
-    }
-});
-
-// update anime status
-async function update_status(status: EntryUpdate) {
-    await fetch(`${LOCAL_URL}/mal/me/update/status`, {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(status)
-    })
-}
-
-
-// ========== renderPosters ==========
-function renderPosters() {
-    const isManga = modeSwitch.classList.contains("manga");
-    const list = (isManga ? fullMangaList : fullAnimeList) || [];   // || [] -> never crash on a null list (logged out)
-    const status = statusText.textContent.toLowerCase().replace(/ /g, "_");
-
-    const grid = document.querySelector(".grid");
-    grid.innerHTML = "";                       // clear old posters
-
-    for (const item of list) {
-        if (item.status !== status) continue;  // skip ones that don't match
-
-        const card = document.createElement("div");
-        card.className = "poster";             // wrapper: anchors the overlay
-
-        const img = document.createElement("img");
-        img.className = "poster-img";
-        img.src = item.cover ?? "";            // ?? "" handles a null cover
-
-        const overlay = document.createElement("div");
-        overlay.className = "poster-overlay";
-        overlay.innerHTML =
-            `<div class="poster-title">${item.title ?? ""}</div>` +
-            `<div class="poster-meta">★ ${item.score ?? "—"}</div>`;
-
-        // click a cover -> open the detail modal filled with this item
-        card.addEventListener("click", function () {
-            openDetail(item);
-        });
-
-        card.appendChild(img);
-        card.appendChild(overlay);
-        grid.appendChild(card);
-    }
-}
-
-synopsisToggle.addEventListener("click", function () {
-    const expanded = detailSynopsis.classList.toggle("expanded");
-    synopsisToggle.textContent = expanded ? "Show less" : "Show more...";
-})
-
+// ========== settings modal ==========
 function openSettings() {
     loadSettings();                              // refresh the toggle + update check each time it opens
     settingsOverlay.classList.remove("hidden");
@@ -602,7 +611,7 @@ async function boot() {
 }
 
 
-// ========== fill versionm, menu, add listeners ==========
+// ========== init: fill version, build menu, wire listeners ==========
 versionText.textContent = "v" + chrome.runtime.getManifest().version;
 loadTheme();
 fillStatusMenu(animeStatuses);
@@ -615,6 +624,11 @@ epMinus.addEventListener("click", function () { changeProgress(-1); });
 epPlus.addEventListener("click", function () { changeProgress(1); });
 detailStatusDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailStatusDd.classList.toggle("open"); });
 detailScoreDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailScoreDd.classList.toggle("open"); });
+detailModal.addEventListener("click", function (event) { if (event.target === detailModal) closeDetail(); });   // click the bg to close
+synopsisToggle.addEventListener("click", function () {
+    const expanded = detailSynopsis.classList.toggle("expanded");
+    synopsisToggle.textContent = expanded ? "Show less" : "Show more...";
+});
 accountBtn.addEventListener("click", openAccount);
 accountBack.addEventListener("click", closeAccount);
 accountConnect.addEventListener("click", connectMal);
