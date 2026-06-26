@@ -162,12 +162,7 @@ function toggleMode() {
 // fetch once on load: show the cached copy instantly, then refetch and re-save
 async function loadLists() {
     // check if we have lists in cache (fast)
-    const cached = await chrome.storage.local.get(["animeList", "mangaList"]);
-    if (cached.animeList && cached.mangaList) {
-        fullAnimeList = cached.animeList as Anime[];   // storage returns loose types; we know the shape
-        fullMangaList = cached.mangaList as Manga[];
-        renderPosters();    // render for first time through cache
-    }
+    showCachedLists()
 
     // fetch new list in background (slow)
     const [animeResp, mangaResp] = await Promise.all([
@@ -618,9 +613,21 @@ function closeSettings() {
 }
 
 
+// show cards instantly from cache so the grid isnt blank
+async function showCachedLists() {
+    const cached = await chrome.storage.local.get(["animeList", "mangaList"]);
+    if (cached.animeList && cached.mangaList) {
+        fullAnimeList = cached.animeList as Anime[];
+        fullMangaList = cached.mangaList as Manga[];
+        renderPosters();
+    }
+}
+
+
 // ========== boot ==========
 // check login first: logged in -> load lists; logged out -> show the connect prompt (no crash)
 async function boot() {
+    showCachedLists()
     await loadAccount();
     if (userInfo) {
         loadLists();
