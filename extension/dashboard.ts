@@ -224,6 +224,7 @@ async function loadStatus() {
     const resp = await fetch(`${LOCAL_URL}/status`);
     const status: LiveStatus = await resp.json();
     renderStrip(status);
+    chrome.storage.local.set({ lastStatus: status});
 }
 
 function renderStrip(status: LiveStatus) {
@@ -623,11 +624,20 @@ async function showCachedLists() {
     }
 }
 
+// show the strip instantly from the last saved status
+async function showCachedStrip() {
+    const cached = await chrome.storage.local.get("lastStatus");
+    if (cached.lastStatus) {
+        renderStrip(cached.lastStatus as LiveStatus);
+    }
+}
+
 
 // ========== boot ==========
 // check login first: logged in -> load lists; logged out -> show the connect prompt (no crash)
 async function boot() {
-    showCachedLists()
+    await showCachedLists()
+    showCachedStrip()
     await loadAccount();
     if (userInfo) {
         loadLists();
