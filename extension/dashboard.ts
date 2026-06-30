@@ -381,6 +381,7 @@ function openDetail(item: Anime | Manga) {
     const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
     const done  = (item as Anime).watched ?? (item as Manga).chapters_read;
     const isManga = "num_chapters" in item;
+    const type = isManga ? "manga" : "anime";
 
     detailCover.src = item.cover ?? "";
     detailTitle.textContent = item.title_en || item.title || "Untitled";   // prefer English, fall back to romaji
@@ -394,7 +395,7 @@ function openDetail(item: Anime | Manga) {
     fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), item.status ?? "", onStatusPick);
     fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
     detailSynopsis.textContent = item.synopsis || "No synopsis available.";
-    detailMal.href = `https://myanimelist.net/anime/${item.id}`;
+    detailMal.href = `https://myanimelist.net/${type}/${item.id}`;
 
     // next-episode countdown: only for shows that are actually still airing
     const isAiring = (item as Anime).airing_status === "currently_airing";
