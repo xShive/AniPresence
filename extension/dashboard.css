@@ -134,6 +134,7 @@ body {                              /* entire <body> tag*/
 
 .modal-card::-webkit-scrollbar-track {
     background: transparent;
+    margin: 14px 0;             /* inset so thumb doesnt reach into corners */
 }
 
 .modal-card::-webkit-scrollbar-thumb {
@@ -337,6 +338,25 @@ body {                              /* entire <body> tag*/
     visibility: hidden;
     transform: translateY(-6px);
     transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+/* match the inset scrollbar of the other menus */
+.dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--btn);
+    border-radius: 25px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--btn-hover);
 }
 
 .dropdown.open .dropdown-menu {
@@ -645,6 +665,7 @@ h1 {
     margin: 0 14px 14px;            /* top 0, sides 14, bottom 14 */
     box-shadow: 0 3px 10px rgba(35, 36, 67, 0.08);
     cursor: default;
+    min-height: 53px;               /* reserve cover height so the strip doesnt resize between idle/playing */
 }
 
 .strip-info {
@@ -839,6 +860,8 @@ h1 {
     grid-template-columns: repeat(4, 1fr);      /* 4 cols*/
     gap: 10px;
     margin-top: 10px;
+    align-content: start;           /* keep rows packed at the top, dont stretch them apart */
+    min-height: 330px;
     max-height: 330px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -851,6 +874,7 @@ h1 {
 
 .grid::-webkit-scrollbar-track {
     background: transparent;
+    margin: 8px 0;              /* inset so the thumb doesnt run to the very top/bottom */
 }
 
 .grid::-webkit-scrollbar-thumb {

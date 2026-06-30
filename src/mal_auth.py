@@ -81,6 +81,33 @@ def handle_callback(code: str) -> bool:
     except Exception as e:
         logger.error(f"Failed to exchange code for MAL tokens: {e}")
         return False
+    
+
+def refresh_token() -> bool:
+    try:
+        tokens = get_token()
+        if not tokens:
+            return False
+        
+        response = requests.post(
+            "https://myanimelist.net/v1/oauth2/token",
+            data={
+                "client_id": CLIENT_ID,
+                "grant_type": "refresh_token",
+                "refresh_token": tokens["refresh_token"],
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        with open(TOKEN_FILE, "w") as f:
+            json.dump(response.json(), f)   # new access + refresh token, overwrites old file
+
+        logger.info(f"Successfully refresed MAL token!")
+        return True
+    
+    except Exception as e:
+        logger.error(f"Could not refresh MAL token: {e}")
+        return False
 
 
 def get_my_info() -> Optional[dict[str, Any]]:
@@ -101,6 +128,18 @@ def get_my_info() -> Optional[dict[str, Any]]:
             params={"fields": "anime_statistics"},
             timeout=10,
         )
+        if response.status_code == 401:
+            refresh_token()
+            tokens = get_token()
+            if not tokens:
+                return None
+            
+            response = requests.get(
+                "https://api.myanimelist.net/v2/users/@me",
+                headers={"Authorization": "Bearer " + tokens["access_token"]},
+                params={"fields": "anime_statistics"},
+                timeout=10,
+            )
         response.raise_for_status()
         return response.json()
     
@@ -142,6 +181,21 @@ def get_animelist():
             },
             timeout=10,
         )
+        if response.status_code == 401:
+            refresh_token()
+            tokens = get_token()
+            if not tokens:
+                return None
+            
+            response = requests.get(
+                "https://api.myanimelist.net/v2/users/@me/animelist",
+                headers={"Authorization": "Bearer " + tokens["access_token"]},
+                params={
+                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
+                "limit": 1000,
+                },
+                timeout=10,
+            )
         response.raise_for_status()
 
         raw = response.json()
@@ -193,6 +247,21 @@ def get_mangalist():
             },
             timeout=10,
         )
+        if response.status_code == 401:
+            refresh_token()
+            tokens = get_token()
+            if not tokens:
+                return None
+            
+            response = requests.get(
+                "https://api.myanimelist.net/v2/users/mangalist",
+                headers={"Authorization": "Bearer " + tokens["access_token"]},
+                params={
+                "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
+                "limit": 1000,
+                },
+                timeout=10,
+            )
         response.raise_for_status()
 
         raw = response.json()
@@ -249,7 +318,18 @@ def update_anime_status(raw):
             data=data,
             timeout=10
         )
-        response.raise_for_status()
+        if response.status_code == 401:
+            refresh_token()
+            tokens = get_token()
+            if not tokens:
+                return None
+            
+            response = requests.patch(
+                f"https://api.myanimelist.net/v2/{anime_manga}/{id}/my_list_status",
+                headers={"Authorization": "Bearer " + tokens["access_token"]},
+                data=data,
+                timeout=10,
+            )
         return response.json()
     
     except Exception as e:
