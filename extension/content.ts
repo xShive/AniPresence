@@ -94,10 +94,10 @@ function scrapeData(): ScrapedData | null {
 
     // prefer the dedicated number element; otherwise fall back to the title and parse a number out of it
     const rawEpisodeValue = numberEl ? numberEl.textContent : (titleEl ? titleEl.textContent : "");
-
     return {
         anime_title: animeTitleEl
-            ? (SITE.parseAnimeTitle ? SITE.parseAnimeTitle(animeTitleEl.textContent) : animeTitleEl.textContent.trim())
+            ? (SITE.parseAnimeTitle ? SITE.parseAnimeTitle(animeTitleEl.textContent)
+                                    : animeTitleEl.textContent.trim())
             : "",
         episode_title: (titleEl && SITE.parseEpisodeTitle) ? SITE.parseEpisodeTitle(titleEl.textContent) : "",
         episode: SITE.parseEpisodeNumber ? SITE.parseEpisodeNumber(rawEpisodeValue) : (rawEpisodeValue ? rawEpisodeValue.trim() : ""),
