@@ -265,15 +265,26 @@ function fillStripPills(title: string | null, episode_line: string | null) {
     pillType.textContent = match.media_type ? match.media_type.toUpperCase() : "—";
 }
 
+// normalize  crunchyroll title, turn "4th season" into "season 4",
+// then strip punctuation
+function normalizeTitle(s: string): string {
+    return s
+        .toLowerCase()
+        .replace(/(\d+)\s*(?:st|nd|rd|th)\s+season/g, "season $1")   // "4th season" -> "season 4"
+        .replace(/[^a-z0-9]+/g, " e")                                // drop punctuation / symbols
+        .trim()
+        .replace(/\s+/g, " ");                                      // collapse double spaces
+}
+
 // find the currently-watched anime in the loaded list
 function findAnimeByTitle(title: string | null): Anime | null {
     if (!title) return null;
-    const target = title.toLowerCase().trim();
+    const target = normalizeTitle(title);
 
     for (const anime of fullAnimeList) {
         const names = [anime.title, anime.title_en, ...(anime.synonyms ?? [])];
         for (const name of names) {
-            if (name && name.toLowerCase().trim() === target) {
+            if (name && normalizeTitle(name) === target) {
                 return anime;
             }
         }

@@ -96,7 +96,9 @@ function scrapeData(): ScrapedData | null {
     const rawEpisodeValue = numberEl ? numberEl.textContent : (titleEl ? titleEl.textContent : "");
 
     return {
-        anime_title: animeTitleEl ? animeTitleEl.textContent.trim() : "",
+        anime_title: animeTitleEl
+            ? (SITE.parseAnimeTitle ? SITE.parseAnimeTitle(animeTitleEl.textContent) : animeTitleEl.textContent.trim())
+            : "",
         episode_title: (titleEl && SITE.parseEpisodeTitle) ? SITE.parseEpisodeTitle(titleEl.textContent) : "",
         episode: SITE.parseEpisodeNumber ? SITE.parseEpisodeNumber(rawEpisodeValue) : (rawEpisodeValue ? rawEpisodeValue.trim() : ""),
         current_time: currentTime,

@@ -68,6 +68,13 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
             const match = raw.trim().match(/^(?:E|Ep(?:isode)?)[\s:]*([0-9]+)/i) || raw.trim().match(/^([0-9]+)/);
             return match ? match[1].trim() : "";
         },
+        parseAnimeTitle: function (raw) {
+            const base = raw.trim();
+            const og = document.querySelector("meta[property='og:title']");
+            const match = og ? (og.getAttribute("content") || "").match(/Season\s+(\d+)/i) : null;
+            const season = match ? Number(match[1]) : 1;
+            return season >= 2 ? `${base} Season ${season}` : base;   // season 1 = base name on MAL, so leave it
+        },
     },
 
     "animepahe.pw": {

@@ -88,6 +88,7 @@ interface SiteConfig {
   parseEpisodeTitle?: (raw: string) => string;
   parseEpisodeNumber?: (raw: string) => string;
   parseCoverUrl?: (url: string) => string;
+  parseAnimeTitle?: (raw: string) => string;
 }
 
 // the message content.ts sends to background.js to be fetched
