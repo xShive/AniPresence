@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # ========== Global variables ==========
-CURRENT_VERSION = "v1.4.1"
+CURRENT_VERSION = "v1.4.2"
 
 # ========== Functions ==========
 # https://docs.github.com/en/rest/releases/releases?apiVersion=2026-03-10
