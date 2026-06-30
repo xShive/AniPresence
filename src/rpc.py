@@ -9,7 +9,7 @@ from updater import check_for_updates
 from helpers import time_to_seconds
 from functools import wraps
 from log_setup import setup_logging
-from mal_auth import start_login, handle_callback, get_my_info, logout, get_animelist, get_mangalist, update_anime_status
+from mal_auth import start_login, handle_callback, get_my_info, logout, get_animelist, get_mangalist, update_anime_status, find_in_list
 
 import time
 import threading
@@ -35,6 +35,10 @@ current_anime_title = None
 current_episode_line = None
 current_episode_title = None
 current_cover = None
+
+auto_progress_enabled = False
+auto_progress_threshold = 85
+last_marked_episode = None
 
 # ========== Heartbeat Timeout Logic =========
 def timeout_monitor():
@@ -78,7 +82,8 @@ CORS(app)
 def watching():
     global last_ping_time, is_presence_active, is_paused_active, rpc_connected, rpc, current_title_and_number
     global current_end_timestamp, last_episode
-    global current_anime_title, current_episode_line, current_episode_title, current_cover
+    global current_anime_title, current_episode_line, current_episode_title, current_cover      # everything for discord strip
+    global last_marked_episode
 
     last_ping_time = time.time() # reset timer
     is_presence_active = True
@@ -179,6 +184,27 @@ def watching():
         rpc_connected = False
         logger.error(f"Discord's RPC socket failed: {e}.\nA reconnect attempt will trigger shortly.")
 
+    # auto progress
+    if auto_progress_enabled and episode and current_time and duration:
+        total = time_to_seconds(duration)
+        fraction = time_to_seconds(current_time) / total if total else 0
+
+        if fraction * 100 >= auto_progress_threshold and episode_line != last_marked_episode:
+            last_marked_episode = episode_line          # mark FIRST so we only attempt once per episode
+            try:
+                entry = find_in_list(anime_title, get_animelist() or [])
+                n = int(episode)
+                if entry and n > (entry.get("watched") or 0):       # check if current list entry episode is lower than currently watching
+                    update_anime_status({
+                        "is_manga": False,
+                        "id": entry["id"],
+                        "target_status": entry["status"],   # keep current status/score, only bump progress
+                        "score": entry["score"],
+                        "progress": n,
+                    })
+                    logger.info(f"Auto-progress: {anime_title} -> ep {n}")
+            except Exception as e:
+                logger.error(f"Auto-progress failed: {e}")
     return jsonify({ "status": "ok" })
 
 @app.route('/stopped', methods=['POST'])
@@ -269,6 +295,14 @@ def mal_mangalist():
 def mal_update_anime_status():
     update_anime_status(request.get_json())
     return jsonify({ "status" : "ok" })
+
+@app.route('/autoprogress', methods=['POST'])
+def set_autoprogress():
+    global auto_progress_enabled, auto_progress_threshold
+    data = request.get_json()
+    auto_progress_enabled = data.get("enabled", False)
+    auto_progress_threshold = data.get("threshold", 85)
+    return jsonify({"enabled": auto_progress_enabled, "threshold": auto_progress_threshold})
 
 # ========== Main ==========
 if __name__ == '__main__':

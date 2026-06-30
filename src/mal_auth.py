@@ -157,6 +157,19 @@ def logout() -> None:
         logger.warning("Unable to logout; can't find tokens.")
         pass
 
+# findAnimeByTitle but in Python
+def find_in_list(title: str, anime_list):
+    if not title:
+        return None
+    target = title.lower().strip()
+    
+    for anime in anime_list:
+        names = [anime.get("title"), anime.get("title_en")] + (anime.get("synonyms") or [])
+        for name in names:
+            if name and name.lower().strip() == target:
+                return anime
+    return None
+
 def get_animelist():
     """
     STRUCTURE:
