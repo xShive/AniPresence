@@ -192,7 +192,10 @@ function renderPosters() {
     grid.innerHTML = "";                       // clear old posters
 
     for (const item of list) {
-        if (item.status !== status) continue;  // skip ones that don't match
+        let isRewatching: boolean = false;
+
+        if ((item as Anime).is_rewatching && item.status === "completed" && status == "watching") isRewatching = true;
+        if (item.status !== status && !isRewatching ) continue;  // skip ones that don't match
 
         const card = document.createElement("div");
         card.className = "poster";             // wrapper: anchors the overlay
