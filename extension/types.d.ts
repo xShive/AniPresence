@@ -2,6 +2,7 @@
 type AnimeStatus = "watching" | "completed" | "on_hold" | "dropped" | "plan_to_watch";
 
 // Base interface for fields present in animelist dict and mangalist dict
+// used to display, everything (useful) from MAL api call
 interface BaseMedia {
   id: number | null;
   title: string | null;
@@ -21,7 +22,9 @@ interface BaseMedia {
 interface Anime extends BaseMedia {
   num_episodes: number | null;
   watched: number | null;
-  airing_status: string | null;   // MAL "status": currently_airing / finished_airing / not_yet_aired
+  is_rewatching: boolean | null;
+  num_times_rewatched: number | null;
+  airing_status: string | null;
   broadcast: {
     day_of_the_week?: string;
     start_time?: string;
@@ -48,12 +51,15 @@ interface LiveStatus {
   cover: string | null;
 }
 
+// update we send to python (raw)
 interface EntryUpdate {
   is_manga: boolean;
   id: number;
   target_status: string;
   progress: number;
   score: number;
+  is_rewatching?: boolean;
+  num_times_rewatched?: number;
 }
 
 // the object content.js scrapes off the page and sends to /watching

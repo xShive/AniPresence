@@ -73,7 +73,8 @@ const accountDisconnect = document.querySelector(".account-disconnect");
 
 // settings modal
 const settingsOverlay = document.querySelector<HTMLElement>(".settings-overlay");
-const ghostSwitch = document.querySelector<HTMLElement>(".ghost-switch");
+const ghostSwitch = document.querySelector(".ghost-switch");
+const autoProgressSwitch = document.querySelector(".auto-progress-switch")
 const settingsVersion = document.querySelector(".settings-version");
 const updateBtn = document.querySelector<HTMLButtonElement>(".update-btn");
 const settingsBtn = document.querySelector(".settings-btn")
@@ -304,9 +305,14 @@ function prettyStatus(status: string | null): string {
 // build {value,label} options for a status dropdown (anime or manga) so that plan_to_watch = Plan to watch
 function statusOptions(isManga: boolean) {
     const labels = isManga ? mangaStatuses : animeStatuses;
-    return labels.map(function (label) {
+    const opts = labels.map(function (label) {
         return { value: label.toLowerCase().replace(/ /g, "_"), label: label };
     });
+    // rewatching isnt a real mal status
+    if (!isManga) {
+        opts.push({ value: "rewatching", label: "Rewatching" });
+    }
+    return opts;
 }
 
 // build the score options 0-10 (0 shown as "-" = not rated)
@@ -320,6 +326,10 @@ function scoreOptions() {
 
 // fill dropdown: set its current label + build the menu items
 function fillDropdown(wrap: HTMLElement, options: { value: string; label: string }[], current: string, onSelect: (value: string) => void) {
+    // wrap = dropdownbox on page
+    // options = list of choices
+    // current = which value is selected right now ('8' or 'on hold')
+    // onSelect = function call when somethings is picked
     const text = wrap.querySelector(".dropdown-text");
     const menu = wrap.querySelector(".dropdown-menu");
     menu.innerHTML = "";
@@ -379,7 +389,7 @@ function openDetail(item: Anime | Manga) {
     currentDetailItem = item;   // remember it so the +/- buttons can edit it
 
     const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
-    const done  = (item as Anime).watched ?? (item as Manga).chapters_read;
+    const done  = (item as Anime).watched ?? (item as Manga).chapters_read;         
     const isManga = "num_chapters" in item;
     const type = isManga ? "manga" : "anime";
 
@@ -392,7 +402,12 @@ function openDetail(item: Anime | Manga) {
     detailRank.textContent = item.rank != null ? "#" + item.rank : "—";
     detailEpisode.textContent = isManga ? "Chapters" : "Episodes";
     detailProgress.textContent = `${done ?? 0} / ${total || "?"}`;
-    fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), item.status ?? "", onStatusPick);
+    const currentStatus = (item as Anime).is_rewatching ? "rewatching" : (item.status ?? "");
+    fillDropdown(detailStatusDd, statusOptions("num_chapters" in item), currentStatus, onStatusPick);
+    if ((item as Anime).is_rewatching) {
+        const times = ((item as Anime).num_times_rewatched ?? 0) + 1;   // current rewatch number
+        detailStatusDd.querySelector(".dropdown-text").textContent = `Rewatch #${times}`;
+    }
     fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
     detailSynopsis.textContent = item.synopsis || "No synopsis available.";
     detailMal.href = `https://myanimelist.net/${type}/${item.id}`;
@@ -449,14 +464,30 @@ function changeProgress(delta: number) {
         detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";   // reflect it in the dropdown too
     }
 
+    // finishing a rewatch: reached the end while rewatching -> bump the count + turn rewatching off
+    if (total && next === total && (item as Anime).is_rewatching) {
+        (item as Anime).num_times_rewatched = ((item as Anime).num_times_rewatched ?? 0) + 1;
+        (item as Anime).is_rewatching = false;
+        detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";
+    }
+
     pushUpdate();   // send the full snapshot to MAL
 }
 
 // the user picked a new status
 function onStatusPick(value: string) {
     if (!currentDetailItem) return;
-    currentDetailItem.status = value;   // update our object
-    pushUpdate();                       // then send everything
+    const item = currentDetailItem as Anime;
+    if (value === "rewatching") {
+        item.is_rewatching = true;      // rewatching = a flag on top of a completed entry
+        item.status = "completed";
+        item.watched = 0;               // start the rewatch from episode 0 so "reached total" means finished
+        detailProgress.textContent = `0 / ${item.num_episodes || "?"}`;
+    } else {
+        item.is_rewatching = false;     // any real status turns rewatching off
+        item.status = value;
+    }
+    pushUpdate();
 }
 
 // the user picked a new score
@@ -494,6 +525,8 @@ function pushUpdate() {
         target_status: item.status,
         progress: progress,
         score: item.score,
+        is_rewatching: isManga ? undefined : ((item as Anime).is_rewatching ?? false),      // undefined: JSON.jsonify removes these entries. null: python sees as None
+        num_times_rewatched: isManga ? undefined : ((item as Anime).num_times_rewatched ?? 0),
     });
 
     // bug: you click card from the cache array, so currentDetailItem points into it. (cuz MAL is still fetching)
@@ -617,6 +650,12 @@ async function toggleGhost() {
     ghostSwitch.classList.toggle("on", data.ghost_mode);
 }
 
+async function toggleAutoProgress() {
+    const resp = await fetch(`${LOCAL_URL}/autoprogress`, { method: "POST" });
+    const data = await resp.json();
+    autoProgressSwitch.classList.toggle("on", data.enabled);
+}
+
 function closeSettings() {
     settingsOverlay.classList.add("closing");
     settingsOverlay.addEventListener("animationend", function () {
@@ -688,3 +727,4 @@ settingsBtn.addEventListener("click", openSettings);
 settingsBack.addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", function (event) { if (event.target === settingsOverlay) closeSettings(); });
 ghostSwitch.addEventListener("click", toggleGhost);
+autoProgressSwitch.addEventListener("click", toggleAutoProgress);

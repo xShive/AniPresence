@@ -203,8 +203,10 @@ def watching():
                         "progress": n,
                     })
                     logger.info(f"Auto-progress: {anime_title} -> ep {n}")
+                    
             except Exception as e:
                 logger.error(f"Auto-progress failed: {e}")
+
     return jsonify({ "status": "ok" })
 
 @app.route('/stopped', methods=['POST'])

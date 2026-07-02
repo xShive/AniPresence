@@ -235,7 +235,9 @@ def get_animelist():
 
                 "status":       status.get("status"),
                 "score":        status.get("score"),
-                "watched":      status.get("num_episodes_watched")
+                "watched":      status.get("num_episodes_watched"),
+                "is_rewatching": status.get("is_rewatching"),
+                "num_times_rewatched": status.get("num_times_rewatched")
             })
 
         return anime
@@ -319,11 +321,16 @@ def update_anime_status(raw):
         anime_manga = "manga" if raw["is_manga"] else "anime"
         id = raw["id"]
         progress_field = "num_chapters_read" if raw["is_manga"] else "num_watched_episodes"
-        data = {
+        data = {        # MAL formatted dict
             "status": raw["target_status"],
             "score": raw["score"],
             progress_field: raw["progress"]
         }
+        # anime rewatching
+        if raw.get("is_rewatching") is not None:
+            data["is_rewatching"] = "true" if raw["is_rewatching"] else "false"
+        if raw.get("num_times_rewatched") is not None:
+            data["num_times_rewatched"] = raw["num_times_rewatched"]
         
         response = requests.patch(
             f"https://api.myanimelist.net/v2/{anime_manga}/{id}/my_list_status",

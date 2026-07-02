@@ -13,7 +13,7 @@
 
 <body>
     <!--
-       structure (top to bottom):
+       structure:
         header.topbar        : logo + theme/account/settings icons
         main.views           : main screen
           section.discord-strip : "now watching" strip
@@ -204,6 +204,7 @@
         </div>
     </div>
 
+    <!-- settings modal -->
     <div class="modal-overlay settings-overlay hidden">
         <div class="modal-card">
             <button class="back-btn settings-back material-symbols-outlined">arrow_back</button>
@@ -213,6 +214,13 @@
             <div class="settings-row">
                 <span class="settings-label">Ghost mode</span>
                 <button class="toggle ghost-switch" aria-label="Toggle ghost mode">
+                    <span class="toggle-knob"></span>
+                </button>
+            </div>
+
+            <div class="settings-row">
+                <span class="settings-label">Auto-progress</span>
+                <button class="toggle auto-progress-switch" aria-label="Toggle auto progress">
                     <span class="toggle-knob"></span>
                 </button>
             </div>
