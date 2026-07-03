@@ -27,7 +27,7 @@ const ANIMETSU_CONFIG: SiteConfig = {
     watchPathIncludes: ["/watch"],
     selectors: {
     animeTitle:     "div[class*=\"-tracking-\\[0.02rem\\]\"]",
-    episodeTitle:   ".text-lg",
+    episodeTitle:   "h1.text-lg",
     episodeNum:     "div.text-xs.text-muted.line-clamp-1\\!",
     cover:          "div.aspect-video img",
     video:          "video",
@@ -83,7 +83,7 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
             animeTitle:   "h1 a",
             episodeTitle: null,
             episodeNum:   "#episodeMenu",
-            cover:        ".anime-poster",
+            cover:        ".anime-poster img",
             video:        "video",      // the player is a kwik.cx iframe that injects kwik.js into kwik.cx
         },
         parseEpisodeNumber: function (raw) {

@@ -99,7 +99,10 @@ function scrapeData(): ScrapedData | null {
             ? (SITE.parseAnimeTitle ? SITE.parseAnimeTitle(animeTitleEl.textContent)
                                     : animeTitleEl.textContent.trim())
             : "",
-        episode_title: (titleEl && SITE.parseEpisodeTitle) ? SITE.parseEpisodeTitle(titleEl.textContent) : "",
+        episode_title: titleEl
+            ? (SITE.parseEpisodeTitle ? SITE.parseEpisodeTitle(titleEl.textContent)
+                                      : titleEl.textContent.trim())
+            : "",
         episode: SITE.parseEpisodeNumber ? SITE.parseEpisodeNumber(rawEpisodeValue) : (rawEpisodeValue ? rawEpisodeValue.trim() : ""),
         current_time: currentTime,
         duration: duration,

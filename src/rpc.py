@@ -4,7 +4,7 @@ from pypresence.types import ActivityType
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tray import create_tray
-from mal import get_mal_url
+from mal import get_mal_url, get_mal_cover
 from updater import check_for_updates
 from helpers import time_to_seconds
 from functools import wraps
@@ -113,11 +113,15 @@ def watching():
 
     anime_title_and_number = f"{anime_title} ∙ {episode_line}"
 
+    # look up the mal poster
+    mal_url = get_mal_url(anime_title)
+    mal_cover = get_mal_cover(anime_title) or cover
+
     # remember the live snapshot so the popup strip can read it from /status
     current_anime_title = anime_title
     current_episode_line = episode_line
     current_episode_title = episode_title
-    current_cover = cover
+    current_cover = mal_cover
 
     episode_changed = (episode_line != last_episode)
     last_episode = episode_line
@@ -129,8 +133,6 @@ def watching():
         else:
             seconds_remaining = time_to_seconds(duration) - time_to_seconds(current_time)
 
-        mal_url = get_mal_url(anime_title)
-
         # Is the video finished?
         if seconds_remaining <= 0 and duration not in ("", "0:00"):
             if current_end_timestamp is not None:
@@ -140,7 +142,7 @@ def watching():
             rpc.update(
                 details=anime_title_and_number,
                 state="✓ Finished!",
-                large_image=cover,
+                large_image=mal_cover,
                 buttons=[{"label": "View on MAL", "url": mal_url}]
             )
 
@@ -154,7 +156,7 @@ def watching():
             rpc.update(
                 details=anime_title_and_number,
                 state="⏸ Paused",
-                large_image=cover,
+                large_image=mal_cover,
                 buttons=[{"label": "View on MAL", "url": mal_url}]
             )
 
@@ -174,7 +176,7 @@ def watching():
                 activity_type=ActivityType.WATCHING,
                 details=anime_title_and_number,
                 state=episode_title if episode_title else None,
-                large_image=cover,
+                large_image=mal_cover,
                 start=start_timestamp,
                 end=current_end_timestamp,
                 buttons=[{"label": "View on MAL", "url": mal_url}]
