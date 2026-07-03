@@ -327,12 +327,16 @@ function scoreOptions() {
     return opts;
 }
 
-// fill dropdown: set its current label + build the menu items
+/**
+ * make a custom dropdown: set its button label to the current value and build
+ * a clickable <li> for each option.
+ *
+ * @param wrap - the .dropdown element to fill
+ * @param options - the {value, label} choices to list
+ * @param current - the value to show as selected on the button
+ * @param onSelect - called with the picked value when an option is clicked
+ */
 function fillDropdown(wrap: HTMLElement, options: { value: string; label: string }[], current: string, onSelect: (value: string) => void) {
-    // wrap = dropdownbox on page
-    // options = list of choices
-    // current = which value is selected right now ('8' or 'on hold')
-    // onSelect = function call when somethings is picked
     const text = wrap.querySelector(".dropdown-text");
     const menu = wrap.querySelector(".dropdown-menu");
     menu.innerHTML = "";
@@ -387,7 +391,12 @@ function nextEpisodeIn(broadcast: { day_of_the_week?: string; start_time?: strin
 
 
 // ========== detail modal: open / close ==========
-// fill the modal with the clicked item, then show it
+/**
+ * fill the detail modal with a clicked entry and show it. stores the entry in
+ * currentDetailItem so the +/- buttons and dropdowns know what to edit.
+ *
+ * @param item - the anime or manga whose poster was clicked
+ */
 function openDetail(item: Anime | Manga) {
     currentDetailItem = item;   // remember it so the +/- buttons can edit it
 
@@ -441,7 +450,13 @@ function closeDetail() {
 
 
 // ========== detail modal: edits ==========
-// bump the episode/chapter count by +1 or -1 and push it to MAL
+/**
+ * bump the open entry's episode/chapter count by delta, clamp it to [0, total],
+ * update the screen, auto-complete at the end (and finish a rewatch), then push
+ * the change to MAL.
+ *
+ * @param delta - +1 or -1
+ */
 function changeProgress(delta: number) {
     if (!currentDetailItem) return;
     const item = currentDetailItem;
@@ -512,10 +527,12 @@ function closeDropdownsOnOutsideClick(event: MouseEvent) {
 
 
 // ========== detail modal: build + send the update ==========
-// build the small write-only dict from the open item, then send it.
-// the Anime/Manga types carry lots of display stuff we got FROM mal but dont send back,
-// so we build a slim EntryUpdate with only what mal needs to write (id, status, progress, score).
-// every edit (episodes, status, score) funnels through here, so it always sends a full, consistent dict.
+/**
+ * build a slim EntryUpdate from currentDetailItem (only what mal writes: id, status,
+ * progress, score, plus anime rewatch fields) and send it to python -> mal. also
+ * writes the edit back into the live list + cache so the grid and reopen stay in sync.
+ * every edit (episodes, status, score) funnels through here.
+ */
 function pushUpdate() {
     if (!currentDetailItem) return;
     const item = currentDetailItem;

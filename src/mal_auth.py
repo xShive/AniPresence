@@ -84,6 +84,12 @@ def handle_callback(code: str) -> bool:
     
 
 def refresh_token() -> bool:
+    """Use the saved refresh token to get a fresh access token from MAL and
+    overwrite the token file with the new tokens.
+
+    Returns:
+        bool: True if new tokens were fetched and saved, False on failure.
+    """
     try:
         tokens = get_token()
         if not tokens:
@@ -157,8 +163,16 @@ def logout() -> None:
         logger.warning("Unable to logout; can't find tokens.")
         pass
 
-# findAnimeByTitle but in Python
-def find_in_list(title: str, anime_list):
+def find_in_list(title: str, anime_list) -> Optional[dict]:
+    """Find the entry in a MAL list whose title matches a scraped title.
+
+    Args:
+        title (str): the scraped anime title to look for.
+        anime_list (list): the list of entry dicts from get_animelist / get_mangalist.
+
+    Returns:
+        dict | None: the matching entry dict, or None if nothing matched. The entry dict contains the stuff listed below in `get_animelist`.
+    """
     if not title:
         return None
     target = title.lower().strip()
@@ -170,15 +184,12 @@ def find_in_list(title: str, anime_list):
                 return anime
     return None
 
-def get_animelist():
-    """
-    STRUCTURE:
-    - data: list. each element is one anime.
-        -- each element has two parts:
-            1. node (the anime: id, title, picture)
-            2. list status (personal progress: scores, episodes)
-    - paging: pagination info. if there's a next URL, there are more entries beyond this page
-    mal doesnt include all the things directly so add to fields
+def get_animelist() -> Optional[list[dict]]:
+    """Fetch the user's full MAL anime list and flatten each entry into our own dict shape.
+    Refreshes the token and retries once on a 401.
+
+    Returns:
+        list[dict] | None: our anime entry dicts, or None on failure.
     """
     try:
         tokens = get_token()
@@ -249,7 +260,12 @@ def get_animelist():
         return None
     
 
-def get_mangalist():
+def get_mangalist() -> Optional[list[dict]]:
+    """Same as `get_animelist` but with different fields, reserved for manga.
+
+    Returns:
+        list[dict] | None: our manga entry dicts, or None on failure.
+    """
     try:
         tokens = get_token()
         if not tokens:
@@ -316,7 +332,19 @@ def get_mangalist():
         return None
     
 
-def update_anime_status(raw):
+def update_anime_status(raw: dict) -> Optional[dict]:
+    """Write an updated entry back to MAL (PATCH my_list_status).
+
+    Builds MAL's expected field names from EntryUpdate dict (e.g.
+    num_watched_episodes vs num_chapters_read depending on is_manga).
+    Refreshes the token and retries once on a 401.
+
+    Args:
+        raw (dict): an EntryUpdate.
+
+    Returns:
+        dict | None: MAL's response json, or None on failure.
+    """
     try:
         tokens = get_token()
         if not tokens:

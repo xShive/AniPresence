@@ -200,7 +200,7 @@ def watching():
                     update_anime_status({
                         "is_manga": False,
                         "id": entry["id"],
-                        "target_status": entry["status"],   # keep current status/score, only bump progress
+                        "target_status": "watching" if entry["status"] != "completed" else "completed",
                         "score": entry["score"],
                         "progress": n,
                     })
@@ -306,8 +306,8 @@ def set_autoprogress():
     global auto_progress_enabled, auto_progress_threshold
     data = request.get_json()
     auto_progress_enabled = data.get("enabled", False)
-    print(auto_progress_enabled)
     auto_progress_threshold = data.get("threshold", 85)
+    print(auto_progress_enabled)
     return jsonify({"enabled": auto_progress_enabled, "threshold": auto_progress_threshold})
 
 # ========== Main ==========

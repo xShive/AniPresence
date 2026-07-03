@@ -10,7 +10,17 @@ logger.setLevel(logging.INFO)
 mal_info_cache = {}   # title -> {"url": str, "cover": str | None}
 
 def _fetch_mal_info(title: str) -> dict:
-    """look up a title on jikan once (url + poster), then cache the result."""
+    """Look up a title on Jikan and cache the response.
+
+    Internal helper behind get_mal_url / get_mal_cover so both share a single
+    request per title. Falls back to a search url + no cover if the lookup fails.
+
+    Args:
+        title (str): the anime title to search for.
+
+    Returns:
+        dict: {"url": str, "cover": str | None} for this title.
+    """
     if title in mal_info_cache:
         return mal_info_cache[title]
 
@@ -41,10 +51,24 @@ def _fetch_mal_info(title: str) -> dict:
 
 
 def get_mal_url(title: str) -> str:
-    """the anime's MAL page url (for the 'View on MAL' button)."""
+    """The anime's MAL page url (for the 'View on MAL' button).
+
+    Args:
+        title (str): the anime title.
+
+    Returns:
+        str: the MAL url (a search url if the title wasn't found).
+    """
     return _fetch_mal_info(title)["url"]
 
 
 def get_mal_cover(title: str):
-    """the anime's MAL poster url (discord can load this), or None if not found."""
+    """The anime's MAL poster url (a CDN image Discord can load).
+
+    Args:
+        title (str): the anime title.
+
+    Returns:
+        str | None: the poster url, or None if the title wasn't found.
+    """
     return _fetch_mal_info(title)["cover"]
