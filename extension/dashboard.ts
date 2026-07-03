@@ -626,6 +626,7 @@ async function loadSettings() {
     const resp = await fetch(`${LOCAL_URL}/status`);
     const status: LiveStatus = await resp.json();
     ghostSwitch.classList.toggle("on", status.ghost_mode);
+    autoProgressSwitch.classList.toggle("on", status.auto_progress);
 
     checkUpdate();
 }
@@ -654,7 +655,12 @@ async function toggleGhost() {
 }
 
 async function toggleAutoProgress() {
-    const resp = await fetch(`${LOCAL_URL}/autoprogress`, { method: "POST" });
+    const enabled = !autoProgressSwitch.classList.contains("on");   // if u click it, u want the opposite of current state
+    const resp = await fetch(`${LOCAL_URL}/autoprogress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled, threshold: 85 })
+    });
     const data = await resp.json();
     autoProgressSwitch.classList.toggle("on", data.enabled);
 }

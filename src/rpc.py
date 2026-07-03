@@ -240,12 +240,13 @@ def status():
     return jsonify({
         "is_watching": is_presence_active,
         "is_paused": is_paused_active,
-        "ghost_mode": ghost_mode,
         "title_number": current_title_and_number or None,
         "anime_title": current_anime_title,
         "episode_line": current_episode_line,
         "episode_title": current_episode_title,
         "cover": current_cover,
+        "ghost_mode": ghost_mode,
+        "auto_progress": auto_progress_enabled
     })
 
 @app.route('/ghost', methods=['POST'])
@@ -303,6 +304,7 @@ def set_autoprogress():
     global auto_progress_enabled, auto_progress_threshold
     data = request.get_json()
     auto_progress_enabled = data.get("enabled", False)
+    print(auto_progress_enabled)
     auto_progress_threshold = data.get("threshold", 85)
     return jsonify({"enabled": auto_progress_enabled, "threshold": auto_progress_threshold})
 

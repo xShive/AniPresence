@@ -39,16 +39,17 @@ interface Manga extends BaseMedia {
   chapters_read: number | null;
 }
 
-// what /status returns: the live "now watching" snapshot
+// what /status returns: the live "now watching" snapshot + settings saved
 interface LiveStatus {
   is_watching: boolean;
   is_paused: boolean;
-  ghost_mode: boolean;
   title_number: string | null;
   anime_title: string | null;
   episode_line: string | null;
   episode_title: string | null;
   cover: string | null;
+  ghost_mode: boolean;
+  auto_progress: boolean;
 }
 
 // update we send to python (raw)
