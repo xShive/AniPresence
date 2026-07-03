@@ -191,6 +191,7 @@ def get_animelist():
             params={
                 "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
                 "limit": 1000,
+                "nsfw": "true"
             },
             timeout=10,
         )
@@ -206,6 +207,7 @@ def get_animelist():
                 params={
                 "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
                 "limit": 1000,
+                "nsfw": "true"
                 },
                 timeout=10,
             )
@@ -259,6 +261,7 @@ def get_mangalist():
             params={
                 "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
                 "limit": 1000,
+                "nsfw": "true"
             },
             timeout=10,
         )
@@ -274,6 +277,7 @@ def get_mangalist():
                 params={
                 "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
                 "limit": 1000,
+                "nsfw": "true"
                 },
                 timeout=10,
             )

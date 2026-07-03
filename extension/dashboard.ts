@@ -195,7 +195,7 @@ function renderPosters() {
         let isRewatching: boolean = false;
 
         if ((item as Anime).is_rewatching && item.status === "completed" && status == "watching") isRewatching = true;
-        if (item.status !== status && !isRewatching ) continue;  // skip ones that don't match
+        if ((item.status !== status && !isRewatching) || ((item as Anime).is_rewatching && status === "completed")) continue;  // skip ones that don't match
 
         const card = document.createElement("div");
         card.className = "poster";             // wrapper: anchors the overlay
