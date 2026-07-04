@@ -200,7 +200,7 @@ def get_animelist() -> Optional[list[dict]]:
             "https://api.myanimelist.net/v2/users/@me/animelist",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
             params={
-                "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,updated_at},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",  # ← change this line
+                "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,tags},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
                 "limit": 1000,
                 "nsfw": "true"
             },
@@ -216,9 +216,9 @@ def get_animelist() -> Optional[list[dict]]:
                 "https://api.myanimelist.net/v2/users/@me/animelist",
                 headers={"Authorization": "Bearer " + tokens["access_token"]},
                 params={
-                    "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,updated_at},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
-                    "limit": 1000,
-                    "nsfw": "true"
+                "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,tags},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
+                "limit": 1000,
+                "nsfw": "true"
                 },
                 timeout=10,
             )
@@ -250,7 +250,8 @@ def get_animelist() -> Optional[list[dict]]:
                 "score":        status.get("score"),
                 "watched":      status.get("num_episodes_watched"),
                 "is_rewatching": status.get("is_rewatching"),
-                "num_times_rewatched": status.get("num_times_rewatched")
+                "num_times_rewatched": status.get("num_times_rewatched"),
+                "tags":         status.get("tags"),
             })
 
         return anime
@@ -275,7 +276,7 @@ def get_mangalist() -> Optional[list[dict]]:
             "https://api.myanimelist.net/v2/users/@me/mangalist",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
             params={
-                "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
+                "fields": "list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,num_times_reread,tags},synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
                 "limit": 1000,
                 "nsfw": "true"
             },
@@ -291,7 +292,7 @@ def get_mangalist() -> Optional[list[dict]]:
                 "https://api.myanimelist.net/v2/users/mangalist",
                 headers={"Authorization": "Bearer " + tokens["access_token"]},
                 params={
-                "fields": "list_status,synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
+                "fields": "list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,num_times_reread,tags},synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
                 "limit": 1000,
                 "nsfw": "true"
                 },
@@ -322,7 +323,10 @@ def get_mangalist() -> Optional[list[dict]]:
                 "status":       status.get("status"),
                 "score":        status.get("score"),
                 "volumes_read": status.get("num_volumes_read"),
-                "chapters_read":status.get("num_chapters_read")    
+                "chapters_read":status.get("num_chapters_read"),
+                "is_rereading": status.get("is_rereading"),
+                "num_times_reread": status.get("num_times_reread"),
+                "tags":         status.get("tags"),
             })
 
         return manga

@@ -208,7 +208,7 @@ def watching():
                         "target_status": "completed" if (is_completed or entry["status"] == "completed") else "watching",
                         "score": entry["score"],
                         "progress": n,
-                        "is_rewatching": False if is_completed else is_rewatching,  # ← flip off when completed
+                        "is_rewatching": False if is_completed else is_rewatching,
                         "num_times_rewatched": times_rewatched + 1 if (is_completed and is_rewatching) else times_rewatched
                     })
                     logger.info(f"Auto-progress: {anime_title} -> ep {n}")
