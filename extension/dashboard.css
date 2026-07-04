@@ -213,6 +213,11 @@ body {                              /* entire <body> tag*/
     font-variation-settings: 'FILL' 1;
 }
 
+.detail-tags {
+    display: flex;
+    margin-top: 14px;
+}
+
 /* grouped "edit zone" panel */
 .detail-stats {
     background: var(--pill);        /* soft lavender surface (was near-white --menu) */

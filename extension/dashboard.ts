@@ -341,7 +341,7 @@ function fillDropdown(wrap: HTMLElement, options: { value: string; label: string
     const menu = wrap.querySelector(".dropdown-menu");
     menu.innerHTML = "";
 
-    const currentOpt = options.find(function (o) { return o.value === current; });
+    const currentOpt = options.find(function (o) { return o.value === current; });  // find goes over each element in array (each dict)
     text.textContent = currentOpt ? currentOpt.label : "—";
 
     for (const opt of options) {
@@ -353,6 +353,20 @@ function fillDropdown(wrap: HTMLElement, options: { value: string; label: string
             onSelect(opt.value);                // hand the value to the caller
         });
         menu.appendChild(li);
+    }
+}
+
+function fillTags(tags: string[]) {
+    console.log("fillTags:", tags);
+    const tags_wrapper = document.querySelector(".detail-tags");
+    tags_wrapper.innerHTML = "";
+    if (!tags.length) return;
+
+    for (const tag of tags) {
+        const pill = document.createElement("span");
+        pill.textContent = tag;
+        pill.classList.add("detail-pill", "detail-tag")
+        tags_wrapper.appendChild(pill);
     }
 }
 
@@ -421,6 +435,7 @@ function openDetail(item: Anime | Manga) {
         detailStatusDd.querySelector(".dropdown-text").textContent = `Rewatch #${times}`;
     }
     fillDropdown(detailScoreDd, scoreOptions(), String(item.score ?? 0), onScorePick);
+    fillTags(item.tags);
     detailSynopsis.textContent = item.synopsis || "No synopsis available.";
     detailMal.href = `https://myanimelist.net/${type}/${item.id}`;
 

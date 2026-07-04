@@ -16,6 +16,7 @@ interface BaseMedia {
   title_en: string | null;
   title_ja: string | null;
   synonyms: string[];
+  tags: string[] | null;
 }
   
 // animelist dict type extension
