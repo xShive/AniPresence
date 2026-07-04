@@ -399,7 +399,7 @@ function nextEpisodeIn(broadcast: { day_of_the_week?: string; start_time?: strin
  */
 function openDetail(item: Anime | Manga) {
     currentDetailItem = item;   // remember it so the +/- buttons can edit it
-
+    
     const total = (item as Anime).num_episodes ?? (item as Manga).num_chapters;   // anime -> episodes, manga -> chapters
     const done  = (item as Anime).watched ?? (item as Manga).chapters_read;         
     const isManga = "num_chapters" in item;

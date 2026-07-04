@@ -28,14 +28,14 @@ const ANIMETSU_CONFIG: SiteConfig = {
     selectors: {
     animeTitle:     "div[class*=\"-tracking-\\[0.02rem\\]\"]",
     episodeTitle:   "h1.text-lg",
-    episodeNum:     "div.text-xs.text-muted.line-clamp-1\\!",
+    episodeNum:     "button.ml-auto.select-none",
     cover:          "div.aspect-video img",
     video:          "video",
     },
     parseEpisodeNumber: function (raw) {
         if (!raw) return "";
-        const match = raw.match(/Episode\s+([0-9]+)/i);
-        return match ? match[1].trim() : "";
+        const match = raw.match(/(ep)\s*([0-9]+)/i);
+        return match ? match[2].trim() : "";
     },
 };
 

@@ -197,12 +197,19 @@ def watching():
                 entry = find_in_list(anime_title, get_animelist() or [])
                 n = int(episode)
                 if entry and n > (entry.get("watched") or 0):       # check if current list entry episode is lower than currently watching
+                    total = entry.get("num_episodes") or 0
+                    is_completed = total > 0 and n >= total
+                    is_rewatching = entry.get("is_rewatching") or False
+                    times_rewatched = entry.get("num_times_rewatched") or 0
+                    
                     update_anime_status({
                         "is_manga": False,
                         "id": entry["id"],
-                        "target_status": "watching" if entry["status"] != "completed" else "completed",
+                        "target_status": "completed" if (is_completed or entry["status"] == "completed") else "watching",
                         "score": entry["score"],
                         "progress": n,
+                        "is_rewatching": False if is_completed else is_rewatching,  # ← flip off when completed
+                        "num_times_rewatched": times_rewatched + 1 if (is_completed and is_rewatching) else times_rewatched
                     })
                     logger.info(f"Auto-progress: {anime_title} -> ep {n}")
                     

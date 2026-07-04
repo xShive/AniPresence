@@ -200,7 +200,7 @@ def get_animelist() -> Optional[list[dict]]:
             "https://api.myanimelist.net/v2/users/@me/animelist",
             headers={"Authorization": "Bearer " + tokens["access_token"]},
             params={
-                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
+                "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,updated_at},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",  # ← change this line
                 "limit": 1000,
                 "nsfw": "true"
             },
@@ -216,9 +216,9 @@ def get_animelist() -> Optional[list[dict]]:
                 "https://api.myanimelist.net/v2/users/@me/animelist",
                 headers={"Authorization": "Bearer " + tokens["access_token"]},
                 params={
-                "fields": "list_status,synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
-                "limit": 1000,
-                "nsfw": "true"
+                    "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,updated_at},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
+                    "limit": 1000,
+                    "nsfw": "true"
                 },
                 timeout=10,
             )
