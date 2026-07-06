@@ -215,6 +215,8 @@ body {                              /* entire <body> tag*/
 
 .detail-tags {
     display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
     margin-top: 14px;
 }
 

@@ -289,7 +289,7 @@ def get_mangalist() -> Optional[list[dict]]:
                 return None
             
             response = requests.get(
-                "https://api.myanimelist.net/v2/users/mangalist",
+                "https://api.myanimelist.net/v2/users/@me/mangalist",
                 headers={"Authorization": "Bearer " + tokens["access_token"]},
                 params={
                 "fields": "list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,num_times_reread,tags},synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
