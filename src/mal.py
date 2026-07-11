@@ -1,6 +1,7 @@
 # ========== Imports ==========
 import requests
 import logging
+import urllib.parse
 
 # ========== Logging ==========
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def _fetch_mal_info(title: str) -> dict:
         return mal_info_cache[title]
 
     # fallback if the lookup fails: search link, no cover
-    info = {"url": f"https://myanimelist.net/anime.php?q={title}", "cover": None}
+    info = ({"url": f"https://myanimelist.net/anime.php?q={urllib.parse.quote_plus(title)}", "cover": None})
 
     try:
         response = requests.get("https://api.jikan.moe/v4/anime",
