@@ -140,6 +140,7 @@ def watching():
                 rpc.clear()     # erase countdown, only first time when 0 remaining
 
             rpc.update(
+                activity_type=ActivityType.WATCHING,
                 details=anime_title_and_number,
                 state="✓ Finished!",
                 large_image=mal_cover,
@@ -154,6 +155,7 @@ def watching():
                 rpc.clear()
 
             rpc.update(
+                activity_type=ActivityType.WATCHING,
                 details=anime_title_and_number,
                 state="⏸ Paused",
                 large_image=mal_cover,
@@ -314,7 +316,6 @@ def set_autoprogress():
     data = request.get_json()
     auto_progress_enabled = data.get("enabled", False)
     auto_progress_threshold = data.get("threshold", 85)
-    print(auto_progress_enabled)
     return jsonify({"enabled": auto_progress_enabled, "threshold": auto_progress_threshold})
 
 # ========== Main ==========
