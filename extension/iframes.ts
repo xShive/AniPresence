@@ -1,8 +1,7 @@
 // =====================================================================
-// animepahe plays video in a cross-origin kwik.cx iframe, so content.ts
-// can't read the <video> across origins. this script lives inside that
-// iframe, reads the timestamps, and relays them out through background.js
-// (formatTime comes from helpers.js, loaded first)
+// websites that play video in cross-origin iframes: inject script inside
+// iframe, read timestamps, relay them out through background.js
+// iframes dont have their own tabid, only their own frame
 // =====================================================================
 
 // find the <video> element and send its timestamps to background.js

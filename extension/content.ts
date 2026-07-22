@@ -12,12 +12,12 @@ const SITE = SITE_CONFIGS[currentHost];
 
 // ========== State ==========
 let isWatching = false;
-let kwikVideoData: VideoData | null = null;
+let iframeVideoData: VideoData | null = null;
 
 // listen to background.js: if kwik video data arrives, store it for scrapeData()
 function handleVideoData(message: VideoData) {
     if (message.type === "video_data") {
-        kwikVideoData = message;
+        iframeVideoData = message;
     }
 }
 
@@ -82,10 +82,10 @@ function scrapeData(): ScrapedData | null {
         currentTime = videoEl.currentTime != null ? formatTime(videoEl.currentTime) : "";
         duration = videoEl.duration ? formatTime(videoEl.duration) : "";
         isPaused = videoEl.paused;
-    } else if (kwikVideoData) {
-        currentTime = kwikVideoData.currentTime;
-        duration = kwikVideoData.duration;
-        isPaused = kwikVideoData.paused;
+    } else if (iframeVideoData) {
+        currentTime = iframeVideoData.currentTime;
+        duration = iframeVideoData.duration;
+        isPaused = iframeVideoData.paused;
     } else {
         currentTime = "";
         duration = "";

@@ -3,8 +3,7 @@
 //   1. content scripts can't call http://127.0.0.1 directly without a
 //      browser security popup, so they send the request here and this file
 //      does the fetch and passes the result back
-//   2. relays kwik video data (from kwik.js, inside the animepahe iframe)
-//      over to content.js in the top page
+//   2. relays iframe video data over to content.js in the top page
 // =====================================================================
 
 // ========== Background fetches (to avoid local network popup) ==========
@@ -31,9 +30,9 @@ function handleMessage(message: FetchMessage | VideoData, sender: chrome.runtime
         return true;
     }
 
-    // kwik video data -> forward it to content.js
+    // iframe video data -> forward it to content.js
     if (message.type === "video_data") {
-        chrome.tabs.sendMessage(sender.tab!.id!, message);      // tabId needed: send to specific tab
+        chrome.tabs.sendMessage(sender.tab!.id!, message);      // send back to content script
     }
 }
 
