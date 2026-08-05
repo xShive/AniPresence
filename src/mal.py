@@ -44,10 +44,11 @@ def _fetch_mal_info(title: str) -> dict:
             info["url"] = node["url"]
             info["cover"] = node.get("images", {}).get("jpg", {}).get("image_url")
 
+            mal_info_cache[title] = info
+
     except Exception as e:
         logger.error(f"Failed to fetch MAL info: {e}")
 
-    mal_info_cache[title] = info
     return info
 
 

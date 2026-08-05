@@ -32,7 +32,7 @@ function handleMessage(message: FetchMessage | VideoData, sender: chrome.runtime
 
     // iframe video data -> forward it to content.js
     if (message.type === "video_data") {
-        chrome.tabs.sendMessage(sender.tab!.id!, message);      // send back to content script
+        chrome.tabs.sendMessage(sender.tab!.id!, message);      // send back to content scripts
     }
 }
 
