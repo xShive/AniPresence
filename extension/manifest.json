@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AniPresence",
-    "version": "1.4.3",
+    "version": "1.4.4",
     "description": "Show your anime & manga on Discord, with your MyAnimeList right at your fingertips. Update episodes, scores and status on the spot.",
 
     "icons": {
