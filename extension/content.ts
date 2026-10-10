@@ -64,6 +64,15 @@ function getCoverUrl(el: Element | null): string {
 
 // ========== Scraper ==========
 // (formatTime + LOCAL_URL now live in helpers.ts, loaded first)
+
+/**
+ * Scrapes data from the website using queryselectors.
+ * 
+ * Returns scraped data when on a supported watch page.
+ * Returns null if
+ * - unsupported website
+ * - supported website but not on an episode
+ */
 function scrapeData(): ScrapedData | null {
     // not a supported site, or not on a watch page
     if (!SITE) return null;
@@ -111,42 +120,86 @@ function scrapeData(): ScrapedData | null {
     };
 }
 
-// ========== Communication with Python ==========
-// route requests through background.js (a direct localhost request triggers a browser security popup)
-// put all scraped data in an object, pass to background.js
-function bgFetch(url: string, method: string, body: ScrapedData | null = null): Promise<any> {
-    return new Promise(function (resolve) {
+
+/**
+ * Sends a fetch request to background script and **waits for its response**.
+ * 
+ * Wraps Chrome's `.sendMessage()` in a Promise so callers can await the completion of the request.
+ * 
+ * Resolves when the background script reports success.
+ * Rejects if
+ * - Chrome messaging failed (`chrome.runtime.lastError`)
+ * - No response somehow (undefined)
+ * - HTTP request failed
+ * 
+ * @param url - URL that the background script sends request to
+ * @param method - HTTP method to use
+ * @param body - Optional scraped data to send as the body
+ */
+function bgFetch(
+    url: string,
+    method: string,
+    body: ScrapedData | null = null
+): Promise<void> {
+    return new Promise(function (resolve, reject) {
         chrome.runtime.sendMessage({
-            type: "fetch",
+            type: "fetch",  
             url: url,
             method: method,
             headers: { "Content-Type": "application/json" },
             body: body,
-        }, resolve);
+        }, function (response: ResponseMessage | undefined) {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+                return;
+            }
+            if (response === undefined) {
+                reject(new Error("Background script did not respond"));
+                return;
+            }
+            if (response.ok === true) {
+                resolve();
+            } else {
+                reject(new Error(response.error));
+            }
+        });
     });
 }
 
-// send the current watch data to the Python app
-async function sendData(data: ScrapedData) {
-    await bgFetch(`${LOCAL_URL}/watching`, "POST", data);
+// forward to bgFetch with /watching endpoint + data
+function sendData(data: ScrapedData): Promise<void> {
+    return bgFetch(`${LOCAL_URL}/watching`, "POST", data);
 }
 
-// tell the Python app to clear the Discord presence
-function sendStop() {
-    bgFetch(`${LOCAL_URL}/stopped`, "POST");
+// forward to bgFetch with /stopped endpoint
+function sendStop(): Promise<void> {
+    return bgFetch(`${LOCAL_URL}/stopped`, "POST");
 }
 
-// ========== Main Loop ==========
-// scrape every 15s and send to Python; if the data disappears, send a stop signal
+/**
+ * Makes a single scrape call and decides what to do with the result.
+ * 
+ * If watch data is available, it is sent through `sendData()` before
+ * `isWatching` is updated.
+ *
+ * If watching has stopped, `sendStop()` is awaited before clearing
+ * `isWatching`.
+ * 
+ * Handles errors from `sendData()` and `sendStop()`
+ */
 async function tick() {
     const data = scrapeData();
 
-    if (data) {
-        await sendData(data);
-        isWatching = true;
-    } else if (isWatching) {
-        sendStop();
-        isWatching = false;
+    try {
+        if (data) {
+            await sendData(data);
+            isWatching = true;
+        } else if (isWatching) {
+            await sendStop();
+            isWatching = false;
+        }
+    } catch (error: unknown) {
+        console.error(error);
     }
 }
 
@@ -155,7 +208,16 @@ function startScraping() {
     setInterval(tick, 15000);
 }
 
-// wait for the page to finish loading before starting the scraper
+
+/**
+ * Runs a callback once the DOM is ready.
+ *
+ * Two options:
+ * 1. If the page is already loaded (readyState) -> run callback immediately
+ * 2. Else, register callback with browser's DOM event system
+ * 
+ * @param callback - Function to run when the DOM is ready.
+ */
 function waitForPageReady(callback: () => void) {
     if (document.readyState === "complete" || document.readyState === "interactive") {
         callback();
@@ -164,9 +226,10 @@ function waitForPageReady(callback: () => void) {
     }
 }
 
+
 function onPageReady() {
     if (!SITE) return;
-    setTimeout(startScraping, 1000);
+    startScraping();
 }
 
 waitForPageReady(onPageReady);

@@ -218,7 +218,7 @@ def watching():
             except Exception as e:
                 logger.error(f"Auto-progress failed: {e}")
 
-    return jsonify({ "status": "ok" })
+    return "", 204
 
 @app.route('/stopped', methods=['POST'])
 def stopped():

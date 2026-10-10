@@ -107,3 +107,6 @@ interface FetchMessage {
   headers: Record<string, string>;
   body: ScrapedData | null;
 }
+
+// whenever scraped data successfully reached python, send a response back with this structure:
+type ResponseMessage = { ok: true } | { ok: false; error: string };

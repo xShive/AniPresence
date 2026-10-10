@@ -3,7 +3,6 @@ build/
 dist/
 Output/
 src/__pycache__/
-ROADMAP.md
 node_modules/
 ARCHITECTURE.md
 extension/*.js

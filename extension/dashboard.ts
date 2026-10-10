@@ -664,6 +664,7 @@ async function loadSettings() {
 }
 
 // ask Python if there's a newer release
+/*
 function checkUpdate() {
     updateBtn.textContent = "Checking…";
     fetch(`${LOCAL_URL}/update`)
@@ -677,6 +678,30 @@ function checkUpdate() {
                 updateBtn.onclick = function () { window.open(data.download_url); };
             }
         });
+}
+*/
+async function checkUpdate() {
+    try {
+        updateBtn.textContent = "Checking...";
+        const response = await fetch(`${LOCAL_URL}/update`);
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (!data.latest_version) {
+            updateBtn.textContent = "Up to date";
+            updateBtn.onclick = null;
+        }
+        else {
+            updateBtn.textContent = `Download ${data.latest_version}`;
+            updateBtn.onclick = () => window.open(data.download_url);
+        }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(msg);
+        updateBtn.textContent = `Check failed`;
+        updateBtn.onclick = null;
+    }
 }
 
 // flip ghost mode by hitting python api
