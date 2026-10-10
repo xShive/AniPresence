@@ -8,6 +8,15 @@
 
 // ========== Background fetches (to avoid local network popup) ==========
 // do the actual fetch (hit the Python API) and send the result back
+/**
+ * Performs the HTTP request described by a FetchMessage
+ * and replies to the original sender with the result.
+ * 
+ * Handles HTTP request fails
+ * 
+ * @param message - `FetchMessage` object
+ * @param sendResponse - Chrome's `sendResponse` method
+ */
 async function doFetch(message: FetchMessage, sendResponse: (response: ResponseMessage) => void) {
     try {
         const httpResponse = await fetch(message.url, {
@@ -27,17 +36,27 @@ async function doFetch(message: FetchMessage, sendResponse: (response: ResponseM
     }
 }
 
-// listen to messages coming from the content scripts   
+
+/**
+ * Background listener that handles incoming messages.
+ * 
+ * - `FetchMessage`: hit Flask server
+ * - `VideoData`: forward iFrame data to content script. handles errors from background -> content
+ * 
+ * @param message - object that is being sent
+ * @param sender - Chrome metadata about the context that sent the message
+ * @param sendResponse - automatically supplied by Chrome to hit callback
+ */   
 function handleMessage(message: FetchMessage | VideoData, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) {
-    // fetch request from content.js -> hit the API in rpc.py, send the status back
     if (message.type === "fetch") {
         doFetch(message, sendResponse);
         return true;    // dont close msg yet (this executes before doFetch finishes)
     }
-
-    // iframe video data -> forward it to content.js
     if (message.type === "video_data") {
-        chrome.tabs.sendMessage(sender.tab!.id!, message);      // send back to content scripts
+        chrome.tabs.sendMessage(sender.tab!.id!, message, {frameId: 0}   
+        ).catch((error: unknown) => {
+            console.error(error);
+        });
     }
 }
 

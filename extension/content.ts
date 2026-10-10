@@ -2,7 +2,7 @@
 // scrapes what you're watching (title/episode/cover/timestamps) every 15s
 // and sends it to the Python app, routed through background.js.
 //
-// types (ScrapedData, VideoData, SiteConfig, SITE_CONFIGS) live in types.d.ts.
+// types (ScrapedData, VideoData, SiteConfig) live in types.d.ts.
 // =====================================================================
 
 // ========== Setup ==========
@@ -165,6 +165,7 @@ function bgFetch(
         });
     });
 }
+
 
 // forward to bgFetch with /watching endpoint + data
 function sendData(data: ScrapedData): Promise<void> {

@@ -99,7 +99,9 @@ interface SiteConfig {
   parseAnimeTitle?: (raw: string) => string;
 }
 
-// the message content.ts sends to background.js to be fetched
+/**
+ * test
+ */
 interface FetchMessage {
   type: "fetch";
   url: string;
