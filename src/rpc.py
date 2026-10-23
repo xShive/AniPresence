@@ -115,6 +115,8 @@ def watching():
 
     # look up the mal poster
     mal_url = get_mal_url(anime_title)
+    mal_cover = get_mal_cover(anime_title) or cover
+
     # remember the live snapshot so the popup strip can read it from /status
     current_anime_title = anime_title
     current_episode_line = episode_line

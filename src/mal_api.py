@@ -9,6 +9,7 @@ from urllib.parse import quote_plus
 
 # ========== Logging ==========
 logger = logging.getLogger(__name__)
+_anime_cache: dict[str, dict] = {}
 
 # ========== Constants & Code setup ==========
 def get_my_info() -> Optional[dict[str, Any]]:
@@ -258,6 +259,12 @@ def update_anime_status(raw: dict) -> Optional[dict]:
 
 
 def _search_anime(title: str) -> Optional[dict]:
+    if not title.strip():
+        return None
+    
+    if title in _anime_cache:
+        return _anime_cache[title]
+    
     try:
         tokens = get_token()
         if not tokens:
@@ -283,7 +290,9 @@ def _search_anime(title: str) -> Optional[dict]:
             )
 
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        _anime_cache[title] = data
+        return data
 
     except Exception as e:
         logger.error(f"Could not match anime's title to its ID: {e}")
