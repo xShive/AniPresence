@@ -4,12 +4,12 @@ from pypresence.types import ActivityType
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tray import create_tray
-from mal import get_mal_url, get_mal_cover
 from updater import check_for_updates
-from helpers import time_to_seconds
+from helpers import time_to_seconds, find_in_list
 from functools import wraps
 from log_setup import setup_logging
-from mal_auth import start_login, handle_callback, get_my_info, logout, get_animelist, get_mangalist, update_anime_status, find_in_list
+from mal_auth import start_login, handle_callback, logout 
+from mal_api import get_animelist, get_mangalist, update_anime_status, get_my_info, get_mal_url, get_mal_cover
 
 import time
 import threading
@@ -115,8 +115,6 @@ def watching():
 
     # look up the mal poster
     mal_url = get_mal_url(anime_title)
-    mal_cover = get_mal_cover(anime_title) or cover
-
     # remember the live snapshot so the popup strip can read it from /status
     current_anime_title = anime_title
     current_episode_line = episode_line
