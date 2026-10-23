@@ -57,7 +57,7 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
             animeTitle:   "[data-t='show-title-link'] h4",
             episodeTitle: "h1.title",
             episodeNum:   "h1.title",
-            cover:        ".bitmovinplayer-poster",
+            cover:        'meta[property="og:image"]',
             video:        "video",
         },
         parseEpisodeTitle: function (raw) {

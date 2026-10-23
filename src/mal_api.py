@@ -259,6 +259,7 @@ def update_anime_status(raw: dict) -> Optional[dict]:
 
 
 def _search_anime(title: str) -> Optional[dict]:
+    # avoid unloaded DOM -> empty titles error
     if not title.strip():
         return None
     

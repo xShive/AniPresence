@@ -5,15 +5,14 @@
 // types (ScrapedData, VideoData, SiteConfig) live in types.d.ts.
 // =====================================================================
 
-// ========== Setup ==========
-// check if the current website is in the config
+// ========== Setup + State ==========
 const currentHost = window.location.hostname.replace("www.", "");
 const SITE = SITE_CONFIGS[currentHost];
 
-// ========== State ==========
 let isWatching = false;
 let iframeVideoData: VideoData | null = null;
 
+// ========== Incoming messages ==========
 // listen to background.js: if kwik video data arrives, store it for scrapeData()
 function handleVideoData(message: VideoData) {
     if (message.type === "video_data") {
@@ -23,47 +22,20 @@ function handleVideoData(message: VideoData) {
 
 chrome.runtime.onMessage.addListener(handleVideoData);
 
-// ========== URL Helpers ==========
-// check if the current URL is still on a watch page
+// ========== Scraping ==========
+/**
+ * Checks whether the current URL contains any of the specified watch-page fragments.
+ *
+ * @param pathIncludes - A URL fragment or array of fragments identifying watch pages.
+ * @returns True if any fragment matches; otherwise false.
+ */
 function pathMatches(pathIncludes: string | string[]): boolean {
     if (!pathIncludes) return false;
     if (Array.isArray(pathIncludes)) {      // crunchyroll has two paths (array)
-        return pathIncludes.some(function (p) {
-            return window.location.href.includes(p);
-        });
+        return pathIncludes.some((p) => window.location.href.includes(p));
     }
     return window.location.href.includes(pathIncludes);
 }
-
-// ========== Cover Image Helpers ==========
-// fallback: read the cover from the page's hidden meta tags
-function getMetaCover(): string {
-    const meta =
-        document.querySelector<HTMLMetaElement>("meta[property='og:image']") ||
-        document.querySelector<HTMLMetaElement>("meta[name='og:image']") ||
-        document.querySelector<HTMLMetaElement>("meta[name='twitter:image']");
-    return meta ? meta.content || meta.getAttribute("content") || "" : "";
-}
-
-// Extract a usable image URL from a cover element: an <img> src, a CSS background-image, or a nested <img>.
-function getCoverUrl(el: Element | null): string {
-    if (!el) return getMetaCover();
-    if (el.tagName === "IMG") return (el as HTMLImageElement).src || getMetaCover();
-
-    const bgImage = (el as HTMLElement).style && (el as HTMLElement).style.backgroundImage;
-    if (bgImage && bgImage !== "none") {
-        const match = bgImage.match(/url\((?:['"]?)(.*?)(?:['"]?)\)/);
-        if (match) return match[1];
-    }
-
-    const nestedImg = el.querySelector("img");
-    if (nestedImg) return nestedImg.src || getMetaCover();
-
-    return el.getAttribute("src") || getMetaCover();
-}
-
-// ========== Scraper ==========
-// (formatTime + LOCAL_URL now live in helpers.ts, loaded first)
 
 /**
  * Scrapes data from the website using queryselectors.
@@ -84,6 +56,12 @@ function scrapeData(): ScrapedData | null {
     const numberEl = document.querySelector(selectors.episodeNum);
     const coverEl = document.querySelector(selectors.cover);
     const videoEl = document.querySelector<HTMLVideoElement>(selectors.video);
+
+    // extract cover url from element
+    const coverUrl =
+        coverEl?.getAttribute("content")
+        ?? coverEl?.getAttribute("src")
+        ?? "";
 
     // read timestamps from the video element (or from kwik for animepahe)
     let currentTime: string, duration: string, isPaused: boolean;
@@ -115,12 +93,12 @@ function scrapeData(): ScrapedData | null {
         episode: SITE.parseEpisodeNumber ? SITE.parseEpisodeNumber(rawEpisodeValue) : (rawEpisodeValue ? rawEpisodeValue.trim() : ""),
         current_time: currentTime,
         duration: duration,
-        cover: SITE.parseCoverUrl ? SITE.parseCoverUrl(getCoverUrl(coverEl)) : getCoverUrl(coverEl),
+        cover: SITE.parseCoverUrl ? SITE.parseCoverUrl(coverUrl) : coverUrl,
         paused: isPaused,
     };
 }
 
-
+// ========== Backend Communication ==========
 /**
  * Sends a fetch request to background script and **waits for its response**.
  * 
@@ -177,6 +155,7 @@ function sendStop(): Promise<void> {
     return bgFetch(`${LOCAL_URL}/stopped`, "POST");
 }
 
+// ========== Scraping loop ==========
 /**
  * Makes a single scrape call and decides what to do with the result.
  * 
@@ -209,7 +188,7 @@ function startScraping() {
     setInterval(tick, 15000);
 }
 
-
+// ========== Initialization ==========
 /**
  * Runs a callback once the DOM is ready.
  *
@@ -226,7 +205,6 @@ function waitForPageReady(callback: () => void) {
         window.addEventListener("DOMContentLoaded", callback);
     }
 }
-
 
 function onPageReady() {
     if (!SITE) return;
