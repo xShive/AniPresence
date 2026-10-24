@@ -47,7 +47,7 @@ def get_my_info() -> Optional[dict[str, Any]]:
     
     except Exception as e:
         logger.error(f"Could not fetch MAL user info: {e}")
-        return None
+        raise
 
 
 def get_animelist() -> Optional[list[Anime]]:

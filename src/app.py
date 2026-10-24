@@ -295,7 +295,7 @@ def mal_logout():
         return jsonify({"disconnected": True})
     
     except Exception as e:
-        return jsonify({"disconnected": False, "error": str(e)}) 503
+        return jsonify({"disconnected": False, "error": str(e)}), 503
 
 @app.route("/mal/callback", methods=['GET'])    # when login works, it hits this
 def mal_callback():
@@ -310,7 +310,10 @@ def mal_callback():
 
 @app.route("/mal/me", methods=['GET'])      # the extension should hit this when loading profile data
 def mal_me():
-    return jsonify(get_my_info())
+    try:
+        return jsonify(get_my_info())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
 
 @app.route("/mal/me/animelist", methods=['GET'])
 def mal_animelist():

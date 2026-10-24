@@ -226,7 +226,7 @@ function renderPosters() {
 
 
 // ========== discord strip ==========
-// hit api to fetch current data
+// hit api to fetch current data to fill in strip + check error
 async function loadStatus() {
     try {
         const resp = await fetch(`${LOCAL_URL}/status`);
@@ -243,7 +243,7 @@ async function loadStatus() {
         }
     }
     catch (error: unknown) {
-        showError("Couldn't connect to the AniPresence app; make sure it's running.");
+        showError(error instanceof Error ? error.message : String(error));
     }
 }
 
@@ -637,9 +637,21 @@ async function update_status(status: EntryUpdate) {
 // ========== account modal ==========
 // fetch the profile (or null) and paint the right state
 async function loadAccount() {
-    const resp = await fetch(`${LOCAL_URL}/mal/me`);
-    userInfo = await resp.json();   // null when not logged in
-    renderAccount();
+    try {
+        const resp = await fetch(`${LOCAL_URL}/mal/me`).catch(() => {
+            throw new Error("The AniPresence app isn't running.")
+        }); 
+        const data = await resp.json();  
+        if (!resp.ok) {     // HTTP request failed
+            throw new Error(data.error);
+        }
+        userInfo = data;
+        renderAccount();
+    }
+    catch(error: unknown) {     // loading the account failed
+        showError(error instanceof Error ? error.message : String(error));  
+        throw error;            // boot awais this function, throw to make it reject
+    }
 }
 
 function renderAccount() {
@@ -831,10 +843,18 @@ async function showCachedStrip() {
 // ========== boot ==========
 // check login first: logged in -> load lists; logged out -> show the connect prompt (no crash)
 async function boot() {
+    await showCachedLists();
+    await showCachedStrip();
+
+    try {
+        await loadAccount();
+    } 
+    catch {
+        return; // loadAccount already displayed the error
+    }
+
     loadStatus();
-    await showCachedLists()
-    showCachedStrip()
-    await loadAccount();
+
     if (userInfo) {
         loadLists();
     } else {
