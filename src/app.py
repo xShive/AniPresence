@@ -283,15 +283,19 @@ def toggle_ghost():
 def mal_login():
     try:
         start_login()
-        return jsonify({"browser_opened": True})
+        return jsonify({"connected": True})
         
     except Exception as e:
-        return jsonify({"browser_opened": False, "error": str(e)}), 503
+        return jsonify({"connected": False, "error": str(e)}), 503
 
 @app.route("/mal/logout", methods=["POST"])
 def mal_logout():
-    logout()
-    return jsonify({"status": "disconnected"})
+    try:
+        logout()
+        return jsonify({"disconnected": True})
+    
+    except Exception as e:
+        return jsonify({"disconnected": False, "error": str(e)}) 503
 
 @app.route("/mal/callback", methods=['GET'])    # when login works, it hits this
 def mal_callback():

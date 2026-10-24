@@ -125,4 +125,4 @@ def logout() -> None:
 
     except FileNotFoundError:
         logger.warning("Unable to logout; can't find tokens.")
-        pass
+        raise FileNotFoundError("Unable to logout; can't find tokens.")

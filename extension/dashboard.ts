@@ -674,7 +674,7 @@ function closeAccount() {
 // connect: kick off MAL login (opens a browser tab via Python)
 async function connectMal() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/login`);
+        const resp = await fetch(`${LOCAL_URL}/mal/login`, {method: "POST"});
         const data = await resp.json();
         if (!resp.ok) {
             throw new Error(data.error)
@@ -687,13 +687,22 @@ async function connectMal() {
 
 // disconnect: drop the token, clear data, flip to the signed-out state
 async function disconnectMal() {
-    await fetch(`${LOCAL_URL}/mal/logout`, { method: "POST" });
-    userInfo = null;
-    fullAnimeList = [];
-    fullMangaList = [];
-    chrome.storage.local.remove(["animeList", "mangaList"]);   // wipe the cache too
-    renderPosters();        // clears the grid
-    renderAccount();        // shows the connect prompt
+    try {
+        const resp = await fetch(`${LOCAL_URL}/mal/logout`, { method: "POST" });
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error);
+        }
+        userInfo = null;
+        fullAnimeList = [];
+        fullMangaList = [];
+        chrome.storage.local.remove(["animeList", "mangaList"]);   // wipe the cache too
+        renderPosters();        // clears the grid
+        renderAccount();        // shows the connect prompt
+    }
+    catch(error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));
+    }
 }
 
 
