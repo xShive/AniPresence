@@ -39,6 +39,7 @@ current_cover = None
 auto_progress_enabled = False
 auto_progress_threshold = 85
 last_marked_episode = None
+pending_auto_progress_error: str | None = None
 
 # ========== Heartbeat Timeout Logic =========
 def timeout_monitor():
@@ -84,6 +85,7 @@ def watching():
     global current_end_timestamp, last_episode
     global current_anime_title, current_episode_line, current_episode_title, current_cover      # everything for discord strip
     global last_marked_episode
+    global pending_auto_progress_error
 
     last_ping_time = time.time() # reset timer
     is_presence_active = True
@@ -217,6 +219,7 @@ def watching():
                     
             except Exception as e:
                 logger.error(f"Auto-progress failed: {e}")
+                pending_auto_progress_error = f"Couldn’t automatically save your progress: {e}"
 
     return "", 204
 
@@ -257,7 +260,8 @@ def status():
         "episode_title": current_episode_title,
         "cover": current_cover,
         "ghost_mode": ghost_mode,
-        "auto_progress": auto_progress_enabled
+        "auto_progress": auto_progress_enabled,
+        "auto_progress_error": pending_auto_progress_error
     })
 
 @app.route('/ghost', methods=['POST'])
@@ -323,6 +327,12 @@ def set_autoprogress():
     auto_progress_enabled = data.get("enabled", False)
     auto_progress_threshold = data.get("threshold", 85)
     return jsonify({"enabled": auto_progress_enabled, "threshold": auto_progress_threshold})
+
+@app.route("/autoprogress/error/clear", methods=["POST"])
+def clear_autoprogress_error():
+    global pending_auto_progress_error
+    pending_auto_progress_error = None
+    return jsonify({"ok": True})
 
 # ========== Main ==========
 if __name__ == '__main__':

@@ -51,6 +51,7 @@ interface LiveStatus {
   cover: string | null;
   ghost_mode: boolean;
   auto_progress: boolean;
+  auto_progress_error: string | null;
 }
 
 // update we send to python (raw)

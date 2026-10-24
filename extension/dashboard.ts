@@ -183,7 +183,6 @@ async function loadLists() {
         // save the new lists so next open is instant
         chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
     }
-    loadStatus();
 }
 
 // build a poster for every item in the current list (anime or manga) that matches the picked status
@@ -229,11 +228,25 @@ function renderPosters() {
 // ========== discord strip ==========
 // hit api to fetch current data
 async function loadStatus() {
-    const resp = await fetch(`${LOCAL_URL}/status`);
-    const status: LiveStatus = await resp.json();
-    renderStrip(status);
-    chrome.storage.local.set({ lastStatus: status});
+    try {
+        const resp = await fetch(`${LOCAL_URL}/status`);
+        const status: LiveStatus = await resp.json();
+        renderStrip(status);
+        chrome.storage.local.set({ lastStatus: status});
+        if (status.auto_progress_error) {
+            showError(status.auto_progress_error, ((): Promise<Response> => {
+                return fetch(`${LOCAL_URL}/autoprogress/error/clear`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json"}
+                });
+            }));
+        }
+    }
+    catch (error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));
+    }
 }
+
 
 function renderStrip(status: LiveStatus) {
     // nothing playing -> idle state
@@ -584,9 +597,17 @@ function pushUpdate() {
     listEdited = true;   // our local copy is now newer than any in-flight fetch -> tell loadLists to back off
 }
 
-function showError(error_msg: string) {
+async function showError(error_msg: string, callback: (() => Promise<Response>) | null = null) {
     errorOverlay.classList.remove("hidden");
     errorMessage.textContent = error_msg;
+    if (callback) {
+        try {
+            await callback();
+        }
+        catch(error: unknown) {
+            console.error("Couldn't clear the stored error: ", error);
+        }
+    }
 }
 
 function closeError() {
@@ -734,7 +755,7 @@ async function toggleGhost() {
         const data = await resp.json();
         ghostSwitch.classList.toggle("on", data.ghost_mode);
         if (!resp.ok) {
-            throw new Error(data.error)
+            throw new Error(data.error);
         }
     }
     catch(error: unknown) {
@@ -744,13 +765,21 @@ async function toggleGhost() {
 
 async function toggleAutoProgress() {
     const enabled = !autoProgressSwitch.classList.contains("on");   // if u click it, u want the opposite of current state
-    const resp = await fetch(`${LOCAL_URL}/autoprogress`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled, threshold: 85 })
-    });
-    const data = await resp.json();
-    autoProgressSwitch.classList.toggle("on", data.enabled);
+    try {
+        const resp = await fetch(`${LOCAL_URL}/autoprogress`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled, threshold: 85 })
+        });
+        const data = await resp.json();
+        autoProgressSwitch.classList.toggle("on", data.enabled);
+        if (!resp.ok) {
+            throw new Error(data.error);
+        }
+    }
+    catch(error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));
+    }
 }
 
 function closeSettings() {
@@ -784,6 +813,7 @@ async function showCachedStrip() {
 // ========== boot ==========
 // check login first: logged in -> load lists; logged out -> show the connect prompt (no crash)
 async function boot() {
+    loadStatus();
     await showCachedLists()
     showCachedStrip()
     await loadAccount();
