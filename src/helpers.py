@@ -1,5 +1,7 @@
 # ========== Imports ==========
 from typing import Optional
+import string
+translator = str.maketrans('', '', string.punctuation)
 
 # ========== Helpers ==========
 def time_to_seconds(t: str) -> int:
@@ -19,11 +21,11 @@ def find_in_list(title: str, anime_list) -> Optional[dict]:
     """
     if not title:
         return None
-    target = title.lower().strip()
+    target = title.lower().strip().translate(translator)    
     
     for anime in anime_list:
         names = [anime.get("title"), anime.get("title_en")] + (anime.get("synonyms") or [])
         for name in names:
-            if name and name.lower().strip() == target:
+            if name and name.lower().strip().translate(translator) == target:
                 return anime
     return None

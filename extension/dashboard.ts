@@ -607,7 +607,7 @@ async function update_status(status: EntryUpdate) {
         if (!response.ok) {
             throw new Error(result.error);
         }
-    } catch (error) {
+    } catch (error: unknown) {
         showError(error instanceof Error ? error.message : String(error));
     }
 }
@@ -729,9 +729,17 @@ async function checkUpdate() {
 
 // flip ghost mode by hitting python api
 async function toggleGhost() {
-    const resp = await fetch(`${LOCAL_URL}/ghost`, { method: "POST" });
-    const data = await resp.json();
-    ghostSwitch.classList.toggle("on", data.ghost_mode);
+    try {
+        const resp = await fetch(`${LOCAL_URL}/ghost`, { method: "POST" });
+        const data = await resp.json();
+        ghostSwitch.classList.toggle("on", data.ghost_mode);
+        if (!resp.ok) {
+            throw new Error(data.error)
+        }
+    }
+    catch(error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));
+     } 
 }
 
 async function toggleAutoProgress() {

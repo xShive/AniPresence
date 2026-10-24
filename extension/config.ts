@@ -11,14 +11,14 @@
 const MIRURO_CONFIG: SiteConfig = {
     watchPathIncludes: "/watch",
     selectors: {
-        animeTitle:   'main h1 a[href^="/info/"]',
-        episodeTitle: '[data-episode-number][data-selected="true"] div:has(+ [id^="episode-description-"]) > span',
-        episodeNum:   '[data-episode-number][data-selected="true"] img ~ span',
-        cover:        'img[style*="view-transition-name: poster"]',
+        animeTitle:   'a.watch-anime-title',
+        episodeTitle: '.watch-now-row h1',
+        episodeNum:   '.watch-now-row p > span:first-child',
+        cover:        'a[href^="/info/"] > img[data-cover-target]',
         video:        'video',
     },
     parseEpisodeNumber: function (raw) {
-        return raw.trim().match(/^EP\s+(\d+(?:\.\d+)?)/i)?.[1] ?? "";
+        return raw.trim().match(/^(?:EP|Episode)\s+(\d+(?:\.\d+)?)/i)?.[1] ?? "";
     },
 };
 

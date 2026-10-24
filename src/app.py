@@ -269,6 +269,9 @@ def toggle_ghost():
             rpc.clear()
         except Exception as e:
             logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
+            return jsonify({ "ghost_mode": ghost_mode,
+                             "error": f"Ghost mode enabled, but couldn't clear your Discord status: {e}"
+                             }), 503
             
     return jsonify({ "ghost_mode": ghost_mode })
 
