@@ -30,7 +30,7 @@ def start_login() -> bool:
     """Open MAL's login page in the user's browser to begin logging in.
 
     Returns:
-        bool: True if the browser was opened, False on failure.
+        bool: True if the browser was opened, raises on failure.
     """
     global _code_verifier
     _code_verifier = secrets.token_urlsafe(64)      # the random secret (PKCE verifier)
@@ -43,12 +43,13 @@ def start_login() -> bool:
         f"&redirect_uri={REDIRECT_URI}"
     )
     try:
-        webbrowser.open(url)
-        return True
+        if webbrowser.open(url):
+            return True
+        raise RuntimeError("Unable to open browser.")
     
     except Exception as e:
         logger.error(f"Could not open the MAL login page: {e}")
-        return False
+        raise
 
 
 def handle_callback(code: str) -> bool:

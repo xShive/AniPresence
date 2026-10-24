@@ -219,7 +219,7 @@ def watching():
                     
             except Exception as e:
                 logger.error(f"Auto-progress failed: {e}")
-                pending_auto_progress_error = f"Couldn’t automatically save your progress: {e}"
+                pending_auto_progress_error = f"Couldn’t automatically save your progress for {anime_title} EP{episode}: {e}"
 
     return "", 204
 
@@ -281,8 +281,12 @@ def toggle_ghost():
 
 @app.route("/mal/login", methods=["GET"])   # 'login' button in extension hits this
 def mal_login():
-    start_login()
-    return jsonify({"status": "opening browser"})
+    try:
+        start_login()
+        return jsonify({"browser_opened": True})
+        
+    except Exception as e:
+        return jsonify({"browser_opened": False, "error": str(e)}), 503
 
 @app.route("/mal/logout", methods=["POST"])
 def mal_logout():

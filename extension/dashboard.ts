@@ -243,7 +243,7 @@ async function loadStatus() {
         }
     }
     catch (error: unknown) {
-        showError(error instanceof Error ? error.message : String(error));
+        showError("Couldn't connect to the AniPresence app; make sure it's running.");
     }
 }
 
@@ -672,8 +672,17 @@ function closeAccount() {
 }
 
 // connect: kick off MAL login (opens a browser tab via Python)
-function connectMal() {
-    fetch(`${LOCAL_URL}/mal/login`);
+async function connectMal() {
+    try {
+        const resp = await fetch(`${LOCAL_URL}/mal/login`);
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error)
+        }
+    }
+    catch(error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));
+    }
 }
 
 // disconnect: drop the token, clear data, flip to the signed-out state
