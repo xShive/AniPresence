@@ -743,11 +743,18 @@ async function loadSettings() {
     settingsVersion.textContent = "Version " + chrome.runtime.getManifest().version;
 
     // ghost state lives in /status
-    const resp = await fetch(`${LOCAL_URL}/status`);
-    const status: LiveStatus = await resp.json();
-    ghostSwitch.classList.toggle("on", status.ghost_mode);
-    autoProgressSwitch.classList.toggle("on", status.auto_progress);
-
+    try {
+        const resp = await fetch(`${LOCAL_URL}/status`);
+        if (!resp.ok) {
+            throw new Error(`Couldn’t load settings: ${resp.status} ${resp.statusText}`);
+        }
+        const status: LiveStatus = await resp.json();
+        ghostSwitch.classList.toggle("on", status.ghost_mode);
+        autoProgressSwitch.classList.toggle("on", status.auto_progress);
+    }
+    catch(error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));
+    }
     checkUpdate();
 }
 
