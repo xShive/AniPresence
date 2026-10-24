@@ -166,22 +166,36 @@ function toggleMode() {
 // ========== lists (load + render the grid) ==========
 // fetch once on load: show the cached copy instantly, then refetch and re-save
 async function loadLists() {
-    // check if we have lists in cache (fast)
-    showCachedLists()
-
     // fetch new list in background (slow)
-    const [animeResp, mangaResp] = await Promise.all([
-        fetch(`${LOCAL_URL}/mal/me/animelist`),
-        fetch(`${LOCAL_URL}/mal/me/mangalist`)
-    ]);
-    // if you edited while this fetch was still flying, its reply is older than your edit -> don't let it overwrite you
-    if (!listEdited) {
-        fullAnimeList = await animeResp.json();     // only use response if flag isnt true
-        fullMangaList = await mangaResp.json();
-        renderPosters();        // re-render
+    try {
+        const [animeResp, mangaResp] = await Promise.all([
+            fetch(`${LOCAL_URL}/mal/me/animelist`),
+            fetch(`${LOCAL_URL}/mal/me/mangalist`)
+        ]);
+        // if you edited while this fetch was still flying, its reply is older than your edit -> don't let it overwrite you
+        if (!listEdited) {
+            const animeData = await animeResp.json();
+            const mangaData = await mangaResp.json();
 
-        // save the new lists so next open is instant
-        chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
+            if (!animeResp.ok) {
+                throw new Error(animeData.error);
+            }
+            if (!mangaResp.ok) {
+                throw new Error(mangaData.error);
+            }
+
+            fullAnimeList = animeData;
+            fullMangaList = mangaData;
+
+            renderPosters();        // re-render
+
+            // save the new lists so next open is instant
+            chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
+        }
+    }
+    catch(error: unknown) {
+        showError(error instanceof Error ? error.message : String(error));  
+
     }
 }
 
@@ -686,7 +700,7 @@ function closeAccount() {
 // connect: kick off MAL login (opens a browser tab via Python)
 async function connectMal() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/login`, {method: "POST"});
+        const resp = await fetch(`${LOCAL_URL}/mal/login`, {method: "GET"});
         const data = await resp.json();
         if (!resp.ok) {
             throw new Error(data.error)

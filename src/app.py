@@ -317,11 +317,17 @@ def mal_me():
 
 @app.route("/mal/me/animelist", methods=['GET'])
 def mal_animelist():
-    return jsonify(get_animelist())
+    try:
+        return jsonify(get_animelist())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
 
 @app.route("/mal/me/mangalist", methods=['GET'])
 def mal_mangalist():
-    return jsonify(get_mangalist())
+    try:
+        return jsonify(get_mangalist())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
 
 @app.route("/mal/me/update/status", methods=['POST'])
 def mal_update_anime_status():

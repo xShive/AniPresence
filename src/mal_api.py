@@ -124,7 +124,7 @@ def get_animelist() -> Optional[list[Anime]]:
 
     except Exception as e:
         logger.error(f"Could not fetch MAL animelist: {e}")
-        return None
+        raise
     
 
 def get_mangalist() -> Optional[list[Manga]]:
@@ -199,7 +199,7 @@ def get_mangalist() -> Optional[list[Manga]]:
     
     except Exception as e:
         logger.error(f"Could not fetch MAL mangalist: {e}")
-        return None
+        raise
     
 
 def update_anime_status(raw: dict) -> dict:
