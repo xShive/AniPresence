@@ -307,9 +307,12 @@ def mal_mangalist():
 
 @app.route("/mal/me/update/status", methods=['POST'])
 def mal_update_anime_status():
-    update_anime_status(request.get_json())
-    return jsonify({ "status" : "ok" })
-
+    try:
+        update_anime_status(request.get_json())
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 502
+    
 @app.route('/autoprogress', methods=['POST'])
 def set_autoprogress():
     global auto_progress_enabled, auto_progress_threshold

@@ -202,7 +202,7 @@ def get_mangalist() -> Optional[list[Manga]]:
         return None
     
 
-def update_anime_status(raw: dict) -> Optional[dict]:
+def update_anime_status(raw: dict) -> dict:
     """Write an updated entry back to MAL (PATCH my_list_status).
 
     Builds MAL's expected field names from EntryUpdate dict (e.g.
@@ -218,7 +218,7 @@ def update_anime_status(raw: dict) -> Optional[dict]:
     try:
         tokens = get_token()
         if not tokens:
-            return None
+            raise RuntimeError("Not logged in")
         
         anime_manga = "manga" if raw["is_manga"] else "anime"
         id = raw["id"]
@@ -244,7 +244,7 @@ def update_anime_status(raw: dict) -> Optional[dict]:
             refresh_token()
             tokens = get_token()
             if not tokens:
-                return None
+                raise RuntimeError("Not logged in")
             
             response = requests.patch(
                 f"https://api.myanimelist.net/v2/{anime_manga}/{id}/my_list_status",
@@ -252,11 +252,13 @@ def update_anime_status(raw: dict) -> Optional[dict]:
                 data=data,
                 timeout=10,
             )
+
+        response.raise_for_status()
         return response.json()
     
     except Exception as e:
         logger.error(f"Could not update status: {e}")
-
+        raise
 
 def _search_anime(title: str) -> Optional[dict]:
     # avoid unloaded DOM -> empty titles error

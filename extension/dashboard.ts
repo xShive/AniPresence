@@ -80,6 +80,10 @@ const updateBtn = document.querySelector<HTMLButtonElement>(".update-btn");
 const settingsBtn = document.querySelector(".settings-btn")
 const settingsBack = document.querySelector(".settings-back");
 
+// error popup modal
+const errorOverlay = document.querySelector(".popup-overlay");
+const errorMessage = document.querySelector(".error-message");
+const errorClose = document.querySelector(".close-btn");
 
 // ========== state ==========
 // LOCAL_URL now comes from helpers.js (loaded before dashboard.js)
@@ -580,13 +584,32 @@ function pushUpdate() {
     listEdited = true;   // our local copy is now newer than any in-flight fetch -> tell loadLists to back off
 }
 
+function showError(error_msg: string) {
+    errorOverlay.classList.remove("hidden");
+    errorMessage.textContent = error_msg;
+}
+
+function closeError() {
+    errorOverlay.classList.add("hidden");
+}
+
 // send an EntryUpdate to the python api (which forwards it to mal)
 async function update_status(status: EntryUpdate) {
-    await fetch(`${LOCAL_URL}/mal/me/update/status`, {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(status)
-    })
+    try {
+        const response = await fetch(`${LOCAL_URL}/mal/me/update/status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(status),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        showError(error instanceof Error ? error.message : String(error));
+    }
 }
 
 
@@ -794,3 +817,5 @@ settingsBack.addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", function (event) { if (event.target === settingsOverlay) closeSettings(); });
 ghostSwitch.addEventListener("click", toggleGhost);
 autoProgressSwitch.addEventListener("click", toggleAutoProgress);
+errorOverlay.addEventListener("click", (event) => { if (event.target === errorOverlay) closeError();})
+errorClose.addEventListener("click", closeError);
