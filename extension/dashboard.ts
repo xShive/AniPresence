@@ -359,31 +359,36 @@ function scoreOptions() {
 }
 
 /**
- * make a custom dropdown: set its button label to the current value and build
- * a clickable <li> for each option.
+ * Fills a custom dropdown with its selected label and clickable options.
+ * Registers click handlers now; they run later when an option is clicked.
+ * Each handler updates the button text, closes the menu, then calls the callback.
+ * Changing the displayed text does not change the selected anime/manga object.
  *
  * @param wrap - the .dropdown element to fill
- * @param options - the {value, label} choices to list
- * @param current - the value to show as selected on the button
- * @param onSelect - called with the picked value when an option is clicked
+ * @param options - Choices whose label is displayed and whose value is passed to the callback.
+ * @param selectedValue - Value used to find the initially selected option's label.
+ * @param onOptionSelected - Callback receiving the new value and the PREVIOUS
+ * button label. The old label is captured before replacing it, so the callback
+ * can restore it if saving fails. Called after updating the text and closing the menu.
  */
-function fillDropdown(wrap: HTMLElement, options: { value: string; label: string }[], current: string, onSelect: (value: string) => void) {
-    const text = wrap.querySelector(".dropdown-text");
-    const menu = wrap.querySelector(".dropdown-menu");
-    menu.innerHTML = "";
+function fillDropdown(wrap: HTMLElement, options: { value: string; label: string }[], selectedValue: string, onOptionSelected: (value: string, previousLabel: string | null) => void) {
+    const selectedTextEl = wrap.querySelector(".dropdown-text");
+    const optionsListEl = wrap.querySelector(".dropdown-menu");
+    optionsListEl.innerHTML = "";
 
-    const currentOpt = options.find(function (o) { return o.value === current; });  // find goes over each element in array (each dict)
-    text.textContent = currentOpt ? currentOpt.label : "—";
+    const selectedOption = options.find((option) => option.value === selectedValue);    // find value-label pair matching current
+    selectedTextEl.textContent = selectedOption ? selectedOption.label : "—";
 
-    for (const opt of options) {
-        const li = document.createElement("li");        // create new list ite\
-        li.textContent = opt.label;
-        li.addEventListener("click", function () {
-            text.textContent = opt.label;      // show the picked label on the button
-            wrap.classList.remove("open");      // close the menu
-            onSelect(opt.value);                // hand the value to the caller
+    for (const option of options) {
+        const optionEl = document.createElement("li");
+        optionEl.textContent = option.label;
+        optionEl.addEventListener("click", () => {
+            const previousLabel = selectedTextEl.textContent;   // save for fallback
+            selectedTextEl.textContent = option.label;
+            wrap.classList.remove("open");
+            onOptionSelected(option.value, previousLabel);
         });
-        menu.appendChild(li);
+        optionsListEl.appendChild(optionEl);
     }
 }
 
@@ -497,16 +502,35 @@ function closeDetail() {
 
 // ========== detail modal: edits ==========
 /**
- * bump the open entry's episode/chapter count by delta, clamp it to [0, total],
- * update the screen, auto-complete at the end (and finish a rewatch), then push
- * the change to MAL.
+ * Changes the episode/chapter count immediately, then awaits saving to MAL.
+ * On failure, restores the old object fields AND the old visible text.
+ *
+ * The +/- button calls this directly: unlike a dropdown option, it has not
+ * changed any text before this function starts. Both old labels can therefore
+ * be read directly from the HTML before editing.
+ *
+ * Reaching the end also changes status; finishing a rewatch additionally changes
+ * is_rewatching and num_times_rewatched. All of these need rollback, not just progress.
+ * updateStatus() displays the error and rethrows; this function handles restoring state.
  *
  * @param delta - +1 or -1
  */
-function changeProgress(delta: number) {
+async function changeProgress(delta: number) {
     if (!currentDetailItem) return;
     const item = currentDetailItem;
-    const isManga = "num_chapters" in item;    // manga objects have num_chapters, anime don't
+    const isManga = "num_chapters" in item;
+
+    // Remember old data
+    const fallback_status = item.status;
+    const fallback_progress_value = isManga
+    ? (item as Manga).chapters_read
+    : (item as Anime).watched;
+    const progressTextEl = detailProgress;
+    const statusTextEl = detailStatusDd.querySelector(".dropdown-text");
+    const fallback_progress_text = progressTextEl.textContent;
+    const fallback_status_text = statusTextEl.textContent; // Includes wording such as "Rewatch #1"
+    const fallback_is_rewatching = (item as Anime).is_rewatching;
+    const fallback_rewatch_count = (item as Anime).num_times_rewatched;
 
     const total   = (isManga ? (item as Manga).num_chapters : (item as Anime).num_episodes) || 0;
     const current = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
@@ -516,7 +540,7 @@ function changeProgress(delta: number) {
     if (total && next > total) next = total;    // can't exceed the total (only if the total is known)
     if (next === current) return;               // nothing changed -> don't bother MAL
 
-    // keep our local object in sync so reopening shows the new number
+    // apply locally
     if (isManga) { (item as Manga).chapters_read = next; }
     else         { (item as Anime).watched = next; }
 
@@ -535,30 +559,105 @@ function changeProgress(delta: number) {
         detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";
     }
 
-    pushUpdate();   // send the full snapshot to MAL
+    try {
+        await pushUpdate();
+    }
+    catch (error) {
+        item.status = fallback_status;
+
+        if (isManga) {
+            (item as Manga).chapters_read = fallback_progress_value;
+        } else {
+            (item as Anime).watched = fallback_progress_value;
+            (item as Anime).is_rewatching = fallback_is_rewatching;
+            (item as Anime).num_times_rewatched = fallback_rewatch_count;
+        }
+
+        // check if user already swapped screens
+        if (currentDetailItem === item) {
+            progressTextEl.textContent = fallback_progress_text;
+            statusTextEl.textContent = fallback_status_text;
+        }
+    }
 }
 
-// the user picked a new status
-function onStatusPick(value: string) {
+/**
+ * Applies a chosen status immediately, then awaits saving; restores it on failure.
+ *
+ * fillDropdown() has ALREADY changed the status button before calling this.
+ * It captures the old label first and passes it as previousLabel. Reading the
+ * button here would read the NEW label, so use that argument for rollback.
+ *
+ * @param value - New option value, e.g. "plan_to_watch" or "rewatching".
+ * @param previousLabel - Status button text captured BEFORE the option click replaced it.
+ */
+async function onStatusPick(value: string, previousLabel: string | null) {
     if (!currentDetailItem) return;
     const item = currentDetailItem as Anime;
+
+    // Remember old data
+    const fallback_status = item.status;
+    const fallback_is_rewatching = item.is_rewatching;
+    const fallback_watched = item.watched;
+    const progressTextEl = detailProgress;
+    const statusTextEl = detailStatusDd.querySelector(".dropdown-text");
+    const fallback_progress_text = progressTextEl.textContent;
+    const fallback_status_text = previousLabel;
+
+    // Rewatching = completed + boolean
     if (value === "rewatching") {
-        item.is_rewatching = true;      // rewatching = a flag on top of a completed entry
+        item.is_rewatching = true;
         item.status = "completed";
-        item.watched = 0;               // start the rewatch from episode 0 so "reached total" means finished
+        item.watched = 0;               // start the rewatch from episode 0
         detailProgress.textContent = `0 / ${item.num_episodes || "?"}`;
     } else {
         item.is_rewatching = false;     // any real status turns rewatching off
         item.status = value;
     }
-    pushUpdate();
+
+    try {
+        await pushUpdate();
+    }
+    catch (error) {
+        item.status = fallback_status;
+        item.is_rewatching = fallback_is_rewatching;
+        item.watched = fallback_watched;
+        // check if user already swapped screens
+        if (currentDetailItem === item) {
+            statusTextEl.textContent = fallback_status_text;
+            progressTextEl.textContent = fallback_progress_text;
+        }
+    }
 }
 
-// the user picked a new score
-function onScorePick(value: string) {
+/**
+ * Applies a chosen rating, awaits saving, and rolls back on failure.
+ *
+ * @param value - New score as an option string, e.g. "9".
+ * @param previousLabel - Score button text from before the click changed it.
+ */
+async function onScorePick(value: string, previousLabel: string | null) {
     if (!currentDetailItem) return;
-    currentDetailItem.score = Number(value);   // dropdown values are strings -> number
-    pushUpdate();
+    const item = currentDetailItem; // Keep the edited object even if another entry is opened while awaiting.
+    const scoreTextEl = detailScoreDd.querySelector(".dropdown-text");
+
+    // Remember old data (and old button label)
+    const fallback_score = item.score;
+    const fallback_score_text = previousLabel;
+
+    // Change local object (button label already changed in dropdown())
+    item.score = Number(value);
+    try {
+        await pushUpdate();
+    }
+    catch (error) {
+        item.score = fallback_score;
+
+        // check if user already swapped screens
+        if (currentDetailItem === item) {
+            scoreTextEl.textContent = fallback_score_text;
+        }
+    } 
 }
 
 // close any open custom dropdown when clicking outside it
@@ -579,21 +678,26 @@ function closeDropdownsOnOutsideClick(event: MouseEvent) {
  * writes the edit back into the live list + cache so the grid and reopen stay in sync.
  * every edit (episodes, status, score) funnels through here.
  */
-function pushUpdate() {
+async function pushUpdate() {
     if (!currentDetailItem) return;
     const item = currentDetailItem;
     const isManga = "num_chapters" in item;
     const progress = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
 
-    update_status({
-        is_manga: isManga,
-        id: item.id,
-        target_status: item.status,
-        progress: progress,
-        score: item.score,
-        is_rewatching: isManga ? undefined : ((item as Anime).is_rewatching ?? false),      // undefined: JSON.jsonify removes these entries. null: python sees as None
-        num_times_rewatched: isManga ? undefined : ((item as Anime).num_times_rewatched ?? 0),
-    });
+    try {
+        await updateStatus({
+            is_manga: isManga,
+            id: item.id,
+            target_status: item.status,
+            progress: progress,
+            score: item.score,
+            is_rewatching: isManga ? undefined : ((item as Anime).is_rewatching ?? false),      // undefined: JSON.jsonify removes these entries. null: python sees as None
+            num_times_rewatched: isManga ? undefined : ((item as Anime).num_times_rewatched ?? 0),
+        });
+    }
+    catch (error) {
+        throw error;        // propegate error from updateStatus back to caller
+    }
 
     // bug: you click card from the cache array, so currentDetailItem points into it. (cuz MAL is still fetching)
     // then mal fetch finishes and does fullAnimeList = the new mal array
@@ -629,7 +733,7 @@ function closeError() {
 }
 
 // send an EntryUpdate to the python api (which forwards it to mal)
-async function update_status(status: EntryUpdate) {
+async function updateStatus(status: EntryUpdate) {
     try {
         const response = await fetch(`${LOCAL_URL}/mal/me/update/status`, {
             method: "POST",
@@ -644,6 +748,7 @@ async function update_status(status: EntryUpdate) {
         }
     } catch (error: unknown) {
         showError(error instanceof Error ? error.message : String(error));
+        throw error;    // propegate error back to pushUpdate
     }
 }
 
