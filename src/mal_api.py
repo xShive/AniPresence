@@ -216,7 +216,6 @@ def update_anime_status(raw: dict) -> dict:
         dict | None: MAL's response json, or None on failure.
     """
     try:
-        raise RuntimeError("Test: status could not be saved")
         tokens = get_token()
         if not tokens:
             raise RuntimeError("Not logged in")
