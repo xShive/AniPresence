@@ -1,10 +1,3 @@
-// =====================================================================
-// scrapes what you're watching (title/episode/cover/timestamps) every 15s
-// and sends it to the Python app, routed through background.js.
-//
-// types (ScrapedData, VideoData, SiteConfig) live in types.d.ts.
-// =====================================================================
-
 // ========== Setup + State ==========
 const currentHost = window.location.hostname.replace("www.", "");
 const SITE = SITE_CONFIGS[currentHost];

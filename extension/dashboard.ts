@@ -56,6 +56,7 @@ const countdownRow = document.querySelector<HTMLElement>(".countdown-row");
 const epMinus = document.querySelector(".ep-minus");
 const epPlus = document.querySelector(".ep-plus");
 const synopsisToggle = document.querySelector(".synopsis-toggle");
+const detailStats = document.querySelector(".detail-stats");
 
 // account modal
 const accountOverlay = document.querySelector<HTMLElement>(".account-overlay");
@@ -680,6 +681,10 @@ function closeDropdownsOnOutsideClick(event: MouseEvent) {
  */
 async function pushUpdate() {
     if (!currentDetailItem) return;
+
+    // avoid sending another update
+    detailStats.classList.add("saving");
+
     const item = currentDetailItem;
     const isManga = "num_chapters" in item;
     const progress = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
@@ -697,6 +702,9 @@ async function pushUpdate() {
     }
     catch (error) {
         throw error;        // propegate error from updateStatus back to caller
+    }
+    finally {
+        detailStats.classList.remove("saving");
     }
 
     // bug: you click card from the cache array, so currentDetailItem points into it. (cuz MAL is still fetching)

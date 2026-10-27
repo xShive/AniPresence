@@ -1052,3 +1052,16 @@ h1 {
 
 
 /* ========== ERROR POPUP ========== */
+
+/* ========== AWAIT SAVING (PUSHUPDATE ========== */
+.saving {
+    pointer-events: none;
+}
+
+.saving button {
+    opacity: 0.6;
+}
+
+.detail-stats button {
+    transition: opacity 0.2s ease;
+}
