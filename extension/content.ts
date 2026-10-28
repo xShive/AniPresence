@@ -112,19 +112,19 @@ function bgFetch(
     method: string,
     body: ScrapedData | null = null
 ): Promise<void> {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({
             type: "fetch",  
             url: url,
             method: method,
             headers: { "Content-Type": "application/json" },
             body: body,
-        }, function (response: ResponseMessage | undefined) {
+        }, (response: ResponseMessage | undefined) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
                 return;
             }
-            if (response === undefined) {
+            if (!response) {
                 reject(new Error("Background script did not respond"));
                 return;
             }
@@ -168,7 +168,7 @@ async function tick() {
             await sendData(data);
             isWatching = true;
         } else if (isWatching) {
-            await sendStop();
+            await sendStop();   // if rpc clearing fails, skip next line to retry
             isWatching = false;
         }
     } catch (error: unknown) {

@@ -19,17 +19,18 @@
  */
 async function doFetch(message: FetchMessage, sendResponse: (response: ResponseMessage) => void) {
     try {
-        const httpResponse = await fetch(message.url, {
+        const resp = await fetch(message.url, {
             method: message.method,
             headers: message.headers,
             body: message.body ? JSON.stringify(message.body) : undefined,
         });
-        if (httpResponse.ok) {
-            sendResponse({ ok: true })
+        if (resp.status !== 204) {
+            const data = await resp.json().catch(() => null);
+            sendResponse({ ok: false, error: (data?.error || `${resp.status} ${resp.statusText}`)});
+            return;
         }
-        else {
-            sendResponse({ ok: false, error: `${httpResponse.status} ${httpResponse.statusText}`});
-        }
+        sendResponse({ ok: true });
+
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         sendResponse({ ok: false, error: msg });

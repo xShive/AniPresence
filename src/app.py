@@ -227,12 +227,6 @@ def watching():
 def stopped():
     global is_presence_active, current_end_timestamp, last_episode, current_title_and_number
     global current_anime_title, current_episode_line, current_episode_title, current_cover
-    try:
-        rpc.clear()
-
-    except Exception as e:
-        logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
-
     is_presence_active = False
     current_end_timestamp = None
     last_episode = None
@@ -241,8 +235,14 @@ def stopped():
     current_episode_line = None
     current_episode_title = None
     current_cover = None
-    logger.info("Presence cleared.")
-    return jsonify({ "status": "ok" })
+    try:
+        rpc.clear()
+        logger.info("Presence cleared.")
+        return jsonify(), 204
+
+    except Exception as e:
+        logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
+        return jsonify({"error": str(e)}), 503
 
 @app.route('/update', methods=['GET'])
 def update():
@@ -250,7 +250,7 @@ def update():
         latest_version, download_url = check_for_updates()
         return jsonify({"latest_version": latest_version or None, "download_url": download_url or None})
 
-    except Exception:
+    except Exception as e:
         return jsonify({"error": str(e)}), 503
 
 @app.route('/status', methods=['GET'])
@@ -292,7 +292,7 @@ def mal_login():
     except Exception as e:
         return jsonify({"error": str(e)}), 503
 
-@app.route("/mal/callback", methods=['GET'])    # when login works, it hits this
+@app.route("/mal/callback", methods=['GET'])
 def mal_callback():
     code = request.args.get("code")
     if code is None:
@@ -312,7 +312,7 @@ def mal_logout():
     except Exception as e:
         return jsonify({"error": str(e)}), 503
 
-@app.route("/mal/me", methods=['GET'])      # the extension should hit this when loading profile data
+@app.route("/mal/me", methods=['GET'])      # the extensgion should hit this when loading profile data
 def mal_me():
     try:
         return jsonify(get_my_info())
