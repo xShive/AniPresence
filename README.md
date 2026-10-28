@@ -1,20 +1,12 @@
 # AniPresence
 
-<p align="center">
+<p>
   <img src="https://img.shields.io/github/license/xShive/AniPresence?style=flat-square" alt="License">
   <img src="https://img.shields.io/github/v/release/xShive/AniPresence?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/downloads/xShive/AniPresence/total?style=flat-square" alt="Downloads">
 </p>
 
 AniPresence is a lightweight hub for all your favorite anime and manga. Track your lists, sync your progress to MyAnimeList, and show what you're watching live on your Discord profile. It pairs an easy-to-use browser extension with a small app that runs locally on your machine.
-
-<div align="center">
-  <a href="https://imgur.com/ry3eCfV">
-    <img src="assets/demo-thumbnail.png" alt="Watch Video" width="500">
-  </a>
-  <br>
-  <p><b>↑ Click to view demo ↑</b></p>
-</div>
 
 ## Installation & Setup
 

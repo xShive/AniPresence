@@ -25,6 +25,7 @@ APP_ID="1510673753871352070"
 last_ping_time = time.time()
 is_presence_active = False
 is_paused_active = False
+presence_clear_pending = False
 rpc_connected = False
 ghost_mode = False
 current_end_timestamp = None
@@ -47,22 +48,36 @@ def timeout_monitor():
     Every 15 seconds content.js sends a /watching ping. last_ping_time records the time of the last ping.
     The timeout_monitor thread wakes up every 5 seconds to check if it has been more than 25 seconds.
     """
-    global last_ping_time, is_presence_active, is_paused_active, rpc_connected
+    global last_ping_time, is_presence_active, is_paused_active, rpc_connected, rpc, presence_clear_pending
     while True:
         time.sleep(5)
-        
-        # if active, but no signal from the browser in 25 seconds
+
         if is_presence_active and (time.time() - last_ping_time > 25):
+            is_presence_active = False
+            presence_clear_pending = True
+
+        if presence_clear_pending:
+            if not rpc_connected:
+                try:
+                    rpc = Presence(APP_ID)
+                    rpc.connect()
+                    rpc_connected = True
+                    logger.info("Successfully reconnected to Discord's RPC socket.")
+                    
+                except Exception as e:
+                    logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
+                    continue
+
             logger.info("Browser tab closed! Clearing Discord presence.")
             try:
-                if rpc_connected:   # check if youre not disconnected
-                    rpc.clear()
+                rpc.clear()
+                presence_clear_pending = False
+                is_presence_active = False
 
             except Exception as e:
                 rpc_connected = False
                 logger.error(f"Discord's RPC socket failed: {e}.\nA reconnect attempt will trigger shortly.")
 
-            is_presence_active = False
 
 # ========== Decorator ==========
 # if two endpoints use the decorator, both endpoints will be named wrapper (prevent)
@@ -85,10 +100,11 @@ def watching():
     global current_end_timestamp, last_episode
     global current_anime_title, current_episode_line, current_episode_title, current_cover      # everything for discord strip
     global last_marked_episode
-    global pending_auto_progress_error
+    global pending_auto_progress_error, presence_clear_pending
 
     last_ping_time = time.time() # reset timer
     is_presence_active = True
+    presence_clear_pending = False
 
     # reconnect rpc if needed
     if not rpc_connected:
@@ -225,9 +241,11 @@ def watching():
 
 @app.route('/stopped', methods=['POST'])
 def stopped():
-    global is_presence_active, current_end_timestamp, last_episode, current_title_and_number
+    global is_presence_active, current_end_timestamp, last_episode, current_title_and_number, presence_clear_pending
     global current_anime_title, current_episode_line, current_episode_title, current_cover
+    global rpc_connected, rpc
     is_presence_active = False
+    presence_clear_pending = True
     current_end_timestamp = None
     last_episode = None
     current_title_and_number = None
@@ -235,12 +253,28 @@ def stopped():
     current_episode_line = None
     current_episode_title = None
     current_cover = None
+
+    # reconnect rpc if needed
+    if not rpc_connected:
+        try:
+            rpc = Presence(APP_ID)
+            rpc.connect()
+            rpc_connected = True
+            current_end_timestamp = None
+            logger.info("Successfully reconnected to Discord's RPC socket.")
+            
+        except Exception as e:
+            logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
+            return jsonify({"error": str(e)}), 500
+
     try:
         rpc.clear()
         logger.info("Presence cleared.")
+        presence_clear_pending = False
         return jsonify(), 204
 
     except Exception as e:
+        rpc_connected = False
         logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
         return jsonify({"error": str(e)}), 500
 

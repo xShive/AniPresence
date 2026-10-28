@@ -1,20 +1,3 @@
-// =====================================================================
-// flow of data (the main loop):
-//   loadLists()     -> fetch mal lists from the python api into fullAnimeList / fullMangaList
-//   renderPosters() -> turn that list into clickable posters in the grid
-//   click a poster  -> openDetail(item) fills the modal boxes + unhides it,
-//                      and stores the clicked anime in currentDetailItem.
-//                      that item IS the same object sitting inside fullAnimeList
-//                      (a reference, not a copy), so editing it edits the list for free
-//   edit (+/-, status, score) -> changeProgress / onStatusPick / onScorePick edit currentDetailItem,
-//                      update the screen, then pushUpdate()
-//   pushUpdate()    -> the Anime/Manga types carry lots of display stuff we got FROM mal but
-//                      dont send back, so we build a small dict (EntryUpdate) with only what mal
-//                      needs to write: id, status, progress, score
-//   update_status() -> POST that small dict to python -> mal
-//
-// =====================================================================
-
 // ========== grab elements ==========
 const versionText = document.querySelector(".version");
 const statusWrap = document.querySelector(".status-wrap");
@@ -174,23 +157,20 @@ async function loadLists() {
             fetch(`${LOCAL_URL}/mal/me/mangalist`)
         ]);
         // if you edited while this fetch was still flying, its reply is older than your edit -> don't let it overwrite you
+        const animeData = await animeResp.json();
+        const mangaData = await mangaResp.json();
+
+        if (!animeResp.ok) {
+            throw new Error(animeData.error);
+        }
+        if (!mangaResp.ok) {
+            throw new Error(mangaData.error);
+        }
+
         if (!listEdited) {
-            const animeData = await animeResp.json();
-            const mangaData = await mangaResp.json();
-
-            if (!animeResp.ok) {
-                throw new Error(animeData.error);
-            }
-            if (!mangaResp.ok) {
-                throw new Error(mangaData.error);
-            }
-
             fullAnimeList = animeData;
             fullMangaList = mangaData;
-
             renderPosters();        // re-render
-
-            // save the new lists so next open is instant
             chrome.storage.local.set({ animeList: fullAnimeList, mangaList: fullMangaList });
         }
     }
@@ -723,26 +703,6 @@ async function pushUpdate() {
     listEdited = true;   // our local copy is now newer than any in-flight fetch -> tell loadLists to back off
 }
 
-async function showError(error_msg: string, callback: (() => Promise<Response>) | null = null) {
-    errorOverlay.classList.remove("hidden");
-    errorMessage.textContent = error_msg;
-    if (callback) {
-        try {
-            const resp = await callback();
-            if (resp.status !== 204) {
-                throw new Error(`${resp.status} ${resp.statusText}`);
-            }
-        }
-        catch(error: unknown) {
-            console.error("Couldn't clear the stored error: ", error);
-        }
-    }
-}
-
-function closeError() {
-    errorOverlay.classList.add("hidden");
-}
-
 // send an EntryUpdate to the python api (which forwards it to mal)
 async function updateStatus(status: EntryUpdate) {
     try {
@@ -761,6 +721,27 @@ async function updateStatus(status: EntryUpdate) {
         showError(error instanceof Error ? error.message : String(error));
         throw error;    // propegate error back to pushUpdate
     }
+}
+
+// ========== error popup ==========
+async function showError(error_msg: string, callback: (() => Promise<Response>) | null = null) {
+    errorOverlay.classList.remove("hidden");
+    errorMessage.textContent = error_msg;
+    if (callback) {
+        try {
+            const resp = await callback();
+            if (resp.status !== 204) {
+                throw new Error(`${resp.status} ${resp.statusText}`);
+            }
+        }
+        catch(error: unknown) {
+            console.error("Couldn't clear the stored error: ", error);
+        }
+    }
+}
+
+function closeError() {
+    errorOverlay.classList.add("hidden");
 }
 
 
