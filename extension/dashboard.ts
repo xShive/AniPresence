@@ -813,10 +813,11 @@ function closeAccount() {
 // connect: kick off MAL login (opens a browser tab via Python)
 async function connectMal() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/login`, {method: "GET"});
-        const data = await resp.json();
-        if (!resp.ok) {
-            throw new Error(data.error)
+        const resp = await fetch(`${LOCAL_URL}/mal/login`, { method: "POST" });
+
+        if (resp.status !== 204) {
+            const data = await resp.json().catch(() => null);
+            throw new Error(data?.error || `${resp.status} ${resp.statusText}`);
         }
     }
     catch(error: unknown) {
@@ -828,18 +829,20 @@ async function connectMal() {
 async function disconnectMal() {
     try {
         const resp = await fetch(`${LOCAL_URL}/mal/logout`, { method: "POST" });
-        const data = await resp.json();
-        if (!resp.ok) {
-            throw new Error(data.error);
+
+        if (resp.status !== 204) {
+            const data = await resp.json().catch(() => null);
+            throw new Error(data?.error || `${resp.status} ${resp.statusText}`);
         }
+
         userInfo = null;
         fullAnimeList = [];
         fullMangaList = [];
-        chrome.storage.local.remove(["animeList", "mangaList"]);   // wipe the cache too
-        renderPosters();        // clears the grid
-        renderAccount();        // shows the connect prompt
+        chrome.storage.local.remove(["animeList", "mangaList"]);
+        renderPosters();
+        renderAccount();
     }
-    catch(error: unknown) {
+    catch (error: unknown) {
         showError(error instanceof Error ? error.message : String(error));
     }
 }
@@ -892,10 +895,11 @@ async function checkUpdate() {
     try {
         updateBtn.textContent = "Checking...";
         const response = await fetch(`${LOCAL_URL}/update`);
-        if (!response.ok) {
-            throw new Error(`${response.status} ${response.statusText}`);
-        }
         const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error);
+        }
+
         if (!data.latest_version) {
             updateBtn.textContent = "Up to date";
             updateBtn.onclick = null;
@@ -905,8 +909,7 @@ async function checkUpdate() {
             updateBtn.onclick = () => window.open(data.download_url);
         }
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(msg);
+        showError(error instanceof Error ? error.message : String(error))
         updateBtn.textContent = `Check failed`;
         updateBtn.onclick = null;
     }

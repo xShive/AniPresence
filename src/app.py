@@ -246,8 +246,12 @@ def stopped():
 
 @app.route('/update', methods=['GET'])
 def update():
-    latest_version, download_url = check_for_updates()
-    return jsonify({"latest_version": latest_version or None, "download_url": download_url or None})
+    try:
+        latest_version, download_url = check_for_updates()
+        return jsonify({"latest_version": latest_version or None, "download_url": download_url or None})
+
+    except Exception:
+        return jsonify({"error": str(e)}), 503
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -283,19 +287,10 @@ def toggle_ghost():
 def mal_login():
     try:
         start_login()
-        return jsonify({"connected": True})
+        return jsonify(), 204
         
     except Exception as e:
-        return jsonify({"connected": False, "error": str(e)}), 503
-
-@app.route("/mal/logout", methods=["POST"])
-def mal_logout():
-    try:
-        logout()
-        return jsonify({"disconnected": True})
-    
-    except Exception as e:
-        return jsonify({"disconnected": False, "error": str(e)}), 503
+        return jsonify({"error": str(e)}), 503
 
 @app.route("/mal/callback", methods=['GET'])    # when login works, it hits this
 def mal_callback():
@@ -307,6 +302,15 @@ def mal_callback():
     if handle_callback(code):
         return "Connected! You can close this tab."
     return "Login failed. Please try again."
+
+@app.route("/mal/logout", methods=["POST"])
+def mal_logout():
+    try:
+        logout()
+        return jsonify(), 204
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
 
 @app.route("/mal/me", methods=['GET'])      # the extension should hit this when loading profile data
 def mal_me():

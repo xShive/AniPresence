@@ -45,5 +45,6 @@ def check_for_updates() -> Tuple[Optional[str], Optional[str]]:
 
     except Exception as e:
         logger.error(f"Failed to check for updates: {e}")
+        raise
     
     return None, None

@@ -21,9 +21,13 @@ def get_token() -> Optional[Any]:
         with open(TOKEN_FILE) as f:
             return json.load(f)
         
+    except FileNotFoundError as e:
+        logger.error(f"Could not find token-file. `Check appdata/roaming/anipresence`\n{e}")
+        return None
+
     except Exception as e:
-        logger.error(f"Could not find token. `Check appdata/roaming/anipresence`\n{e}")
-        return
+        logger.error(e)
+        raise
 
 # ========== Functions ==========
 def start_login() -> bool:
