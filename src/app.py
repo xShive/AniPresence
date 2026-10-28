@@ -195,8 +195,7 @@ def watching():
         total = time_to_seconds(duration)
         fraction = time_to_seconds(current_time) / total if total else 0
 
-        if fraction * 100 >= auto_progress_threshold and episode_line != last_marked_episode:
-            last_marked_episode = episode_line          # mark FIRST so we only attempt once per episode
+        if fraction * 100 >= auto_progress_threshold and (anime_title, episode_line) != last_marked_episode:
             try:
                 entry = find_in_list(anime_title, get_animelist() or [])
                 n = int(episode)
@@ -215,13 +214,14 @@ def watching():
                         "is_rewatching": False if is_completed else is_rewatching,
                         "num_times_rewatched": times_rewatched + 1 if (is_completed and is_rewatching) else times_rewatched
                     })
+                    last_marked_episode = (anime_title, episode_line)
                     logger.info(f"Auto-progress: {anime_title} -> ep {n}")
                     
             except Exception as e:
                 logger.error(f"Auto-progress failed: {e}")
                 pending_auto_progress_error = f"Couldn’t automatically save your progress for {anime_title} EP{episode}: {e}"
 
-    return "", 204
+    return jsonify(), 204
 
 @app.route('/stopped', methods=['POST'])
 def stopped():
@@ -242,7 +242,7 @@ def stopped():
 
     except Exception as e:
         logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/update', methods=['GET'])
 def update():
@@ -251,7 +251,7 @@ def update():
         return jsonify({"latest_version": latest_version or None, "download_url": download_url or None})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -279,7 +279,7 @@ def toggle_ghost():
             logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
             return jsonify({ "ghost_mode": ghost_mode,
                              "error": f"Ghost mode enabled, but couldn't clear your Discord status: {e}"
-                             }), 503
+                             }), 500
             
     return jsonify({ "ghost_mode": ghost_mode })
 
@@ -290,7 +290,7 @@ def mal_login():
         return jsonify(), 204
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/callback", methods=['GET'])
 def mal_callback():
@@ -310,36 +310,36 @@ def mal_logout():
         return jsonify(), 204
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me", methods=['GET'])      # the extensgion should hit this when loading profile data
 def mal_me():
     try:
         return jsonify(get_my_info())
     except Exception as e:
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me/animelist", methods=['GET'])
 def mal_animelist():
     try:
         return jsonify(get_animelist())
     except Exception as e:
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me/mangalist", methods=['GET'])
 def mal_mangalist():
     try:
         return jsonify(get_mangalist())
     except Exception as e:
-        return jsonify({"error": str(e)}), 503
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me/update/status", methods=['POST'])
 def mal_update_anime_status():
     try:
         update_anime_status(request.get_json())
-        return jsonify({"ok": True})
+        return jsonify(), 204
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 502
+        return jsonify({"error": str(e)}), 500
     
 @app.route('/autoprogress', methods=['POST'])
 def set_autoprogress():
@@ -353,7 +353,7 @@ def set_autoprogress():
 def clear_autoprogress_error():
     global pending_auto_progress_error
     pending_auto_progress_error = None
-    return jsonify({"ok": True})
+    return jsonify(), 204
 
 # ========== Main ==========
 if __name__ == '__main__':

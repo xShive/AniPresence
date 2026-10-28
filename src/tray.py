@@ -22,7 +22,7 @@ def background_check(icon):
                 pystray.MenuItem("Quit", lambda: icon.stop())
             )
             icon.menu = updated_menu
-    except:
+    except Exception:
         pass
 
 # problem with one thread: if it stops at request.get(), the thread stops on that line

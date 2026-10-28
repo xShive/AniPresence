@@ -728,7 +728,10 @@ async function showError(error_msg: string, callback: (() => Promise<Response>) 
     errorMessage.textContent = error_msg;
     if (callback) {
         try {
-            await callback();
+            const resp = await callback();
+            if (resp.status !== 204) {
+                throw new Error(`${resp.status} ${resp.statusText}`);
+            }
         }
         catch(error: unknown) {
             console.error("Couldn't clear the stored error: ", error);
@@ -743,17 +746,17 @@ function closeError() {
 // send an EntryUpdate to the python api (which forwards it to mal)
 async function updateStatus(status: EntryUpdate) {
     try {
-        const response = await fetch(`${LOCAL_URL}/mal/me/update/status`, {
+        const resp = await fetch(`${LOCAL_URL}/mal/me/update/status`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(status),
         });
 
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error);
+        if (resp.status !== 204) {
+            const data = await resp.json().catch(() => null);
+            throw new Error(data?.error || `${resp.status} ${resp.statusText}`);
         }
+
     } catch (error: unknown) {
         showError(error instanceof Error ? error.message : String(error));
         throw error;    // propegate error back to pushUpdate
@@ -1008,9 +1011,9 @@ boot();
 statusButton.addEventListener("click", toggleStatusMenu);
 modeSwitch.addEventListener("click", toggleMode);
 themeButton.addEventListener("click", toggleTheme);
-backBtn.addEventListener("click", function () { closeDetail(); });
-epMinus.addEventListener("click", function () { changeProgress(-1); });
-epPlus.addEventListener("click", function () { changeProgress(1); });
+backBtn.addEventListener("click", () => { closeDetail(); });
+epMinus.addEventListener("click", () => { changeProgress(-1); });
+epPlus.addEventListener("click", () => { changeProgress(1); });
 detailStatusDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailStatusDd.classList.toggle("open"); });
 detailScoreDd.querySelector(".dropdown-btn").addEventListener("click", function () { detailScoreDd.classList.toggle("open"); });
 detailModal.addEventListener("click", function (event) { if (event.target === detailModal) closeDetail(); });   // click the bg to close
