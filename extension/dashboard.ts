@@ -64,6 +64,11 @@ const updateBtn = document.querySelector<HTMLButtonElement>(".update-btn");
 const settingsBtn = document.querySelector(".settings-btn")
 const settingsBack = document.querySelector(".settings-back");
 
+// footer
+const notifyWrapper = document.querySelector(".notify-activity");
+const notifyText = document.querySelector(".notify-activity p");
+
+
 // error popup modal
 const errorOverlay = document.querySelector(".popup-overlay");
 const errorMessage = document.querySelector(".error-message");
@@ -150,22 +155,25 @@ function toggleMode() {
 // ========== lists (load + render the grid) ==========
 // fetch once on load: show the cached copy instantly, then refetch and re-save
 async function loadLists() {
+    showTask("Fetching lists...")
+
     // fetch new list in background (slow)
     try {
         const [animeResp, mangaResp] = await Promise.all([
             fetch(`${LOCAL_URL}/mal/me/animelist`),
             fetch(`${LOCAL_URL}/mal/me/mangalist`)
         ]);
-        // if you edited while this fetch was still flying, its reply is older than your edit -> don't let it overwrite you
-        const animeData = await animeResp.json();
-        const mangaData = await mangaResp.json();
-
         if (!animeResp.ok) {
-            throw new Error(animeData.error);
+            const errorData: { error?: string } | null = await animeResp.json().catch(() => null);
+            throw new Error(errorData?.error || `${animeResp.status} ${animeResp.statusText}`);
         }
         if (!mangaResp.ok) {
-            throw new Error(mangaData.error);
+            const errorData: { error?: string } | null = await mangaResp.json().catch(() => null);
+            throw new Error(errorData?.error || `${mangaResp.status} ${mangaResp.statusText}`);
         }
+
+        const animeData: Anime[] | null = await animeResp.json();
+        const mangaData: Manga[] | null = await mangaResp.json();
 
         if (!listEdited) {
             fullAnimeList = animeData;
@@ -176,7 +184,9 @@ async function loadLists() {
     }
     catch(error: unknown) {
         showError(error instanceof Error ? error.message : String(error));  
-
+    }
+    finally {
+        hideTask();
     }
 }
 
@@ -193,7 +203,7 @@ function renderPosters() {
         let isRewatching: boolean = false;
 
         if ((item as Anime).is_rewatching && item.status === "completed" && status == "watching") isRewatching = true;
-        if ((item.status !== status && !isRewatching) || ((item as Anime).is_rewatching && status === "completed")) continue;  // skip ones that don't match
+        if ((item.status !== status && !isRewatching) || ((item as Anime).is_rewatching && status === "completed")) continue;  // skip ones that don't match selected status)
 
         const card = document.createElement("div");
         card.className = "poster";             // wrapper: anchors the overlay
@@ -748,6 +758,7 @@ function closeError() {
 // ========== account modal ==========
 // fetch the profile (or null) and paint the right state
 async function loadAccount() {
+    showTask("Loading account...");
     try {
         const resp = await fetch(`${LOCAL_URL}/mal/me`).catch(() => {
             throw new Error("The AniPresence app isn't running.")
@@ -762,6 +773,9 @@ async function loadAccount() {
     catch(error: unknown) {     // loading the account failed
         showError(error instanceof Error ? error.message : String(error));  
         throw error;            // boot awais this function, throw to make it reject
+    }
+    finally {
+        hideTask();
     }
 }
 
@@ -831,6 +845,17 @@ async function disconnectMal() {
     }
 }
 
+// ========== footer ==========
+function showTask(status_text: string) {
+    notifyWrapper.classList.remove("hidden");
+    notifyText.textContent = status_text;
+}
+
+function hideTask() {
+    notifyWrapper.classList.add("hidden");
+    notifyText.textContent = "";
+}
+
 
 // ========== settings modal ==========
 function openSettings() {
@@ -858,23 +883,6 @@ async function loadSettings() {
     checkUpdate();
 }
 
-// ask Python if there's a newer release
-/*
-function checkUpdate() {
-    updateBtn.textContent = "Checking…";
-    fetch(`${LOCAL_URL}/update`)
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (!data.latest_version) {
-                updateBtn.textContent = "Up to date";
-                updateBtn.onclick = null;
-            } else {
-                updateBtn.textContent = "Download " + data.latest_version;
-                updateBtn.onclick = function () { window.open(data.download_url); };
-            }
-        });
-}
-*/
 async function checkUpdate() {
     try {
         updateBtn.textContent = "Checking...";
