@@ -218,7 +218,7 @@ def update_anime_status(raw: dict) -> dict:
     try:
         tokens = get_token()
         if not tokens:
-            raise RuntimeError("Not logged in")
+            raise RuntimeError("You are not logged in!")
         
         anime_manga = "manga" if raw["is_manga"] else "anime"
         id = raw["id"]
@@ -244,7 +244,7 @@ def update_anime_status(raw: dict) -> dict:
             refresh_token()
             tokens = get_token()
             if not tokens:
-                raise RuntimeError("Not logged in")
+                raise RuntimeError("You are not logged in!")
             
             response = requests.patch(
                 f"https://api.myanimelist.net/v2/{anime_manga}/{id}/my_list_status",

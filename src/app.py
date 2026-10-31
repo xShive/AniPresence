@@ -3,6 +3,7 @@ from pypresence.presence import Presence
 from pypresence.types import ActivityType
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_httpauth import HTTPTokenAuth
 from tray import create_tray
 from updater import check_for_updates
 from helpers import time_to_seconds, find_in_list
@@ -14,10 +15,17 @@ from mal_api import get_animelist, get_mangalist, update_anime_status, get_my_in
 import time
 import threading
 import logging
+import re
 
-# ========== Logging ==========
+# ========== Setup ==========
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {
+    "origins": ["chrome-extension://fgfhfdfhjnmhpkakabgeonffcjjhoeki"]
+}}) 
+auth = HTTPTokenAuth()
 
 # ========== Global Variables ==========
 APP_ID="1510673753871352070"
@@ -85,14 +93,11 @@ def not_ghost(func):
     @wraps(func)
     def wrapper():
         if ghost_mode:
-            return jsonify({ "status": "ghost_mode" })
+            return jsonify(), 204
         return func()
     return wrapper
 
 # ========== Flask app - API endpoints ==========
-app = Flask(__name__)
-CORS(app) 
-
 @app.route('/watching', methods=['POST'])
 @not_ghost
 def watching():
@@ -304,12 +309,15 @@ def status():
 
 @app.route('/ghost', methods=['POST'])
 def toggle_ghost():
-    global ghost_mode
+    global ghost_mode, presence_clear_pending, rpc_connected
     ghost_mode = not ghost_mode
     if ghost_mode:
         try:
+            presence_clear_pending = True
             rpc.clear()
+            presence_clear_pending = False
         except Exception as e:
+            rpc_connected = False
             logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
             return jsonify({ "ghost_mode": ghost_mode,
                              "error": f"Ghost mode enabled, but couldn't clear your Discord status: {e}"

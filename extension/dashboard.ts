@@ -811,7 +811,7 @@ function closeAccount() {
 // connect: kick off MAL login (opens a browser tab via Python)
 async function connectMal() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/login`, { method: "POST" });
+        const resp = await fetch(`${LOCAL_URL}/mal/login`, { method: "GET" });
 
         if (resp.status !== 204) {
             const data = await resp.json().catch(() => null);
@@ -871,11 +871,11 @@ async function loadSettings() {
     try {
         const resp = await fetch(`${LOCAL_URL}/status`);
         if (!resp.ok) {
-            throw new Error(`Couldn’t load settings: ${resp.status} ${resp.statusText}`);
+            throw new Error(`${resp.status} ${resp.statusText}`);
         }
-        const status: LiveStatus = await resp.json();
-        ghostSwitch.classList.toggle("on", status.ghost_mode);
-        autoProgressSwitch.classList.toggle("on", status.auto_progress);
+        const data: LiveStatus = await resp.json();
+        ghostSwitch.classList.toggle("on", data.ghost_mode);
+        autoProgressSwitch.classList.toggle("on", data.auto_progress);
     }
     catch(error: unknown) {
         showError(error instanceof Error ? error.message : String(error));

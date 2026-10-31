@@ -4,3 +4,4 @@ requests
 flask-cors
 pystray
 pillow
+flask-httpauth
