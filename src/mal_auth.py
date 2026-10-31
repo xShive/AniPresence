@@ -2,7 +2,7 @@
 
 # ========== Imports ==========
 import os, json, secrets, webbrowser, requests, logging
-from paths import app_data_dir
+from paths import appdata_dir
 from typing import Any, Optional
 
 # ========== Logging ==========
@@ -11,14 +11,14 @@ logger = logging.getLogger(__name__)
 # ========== Constants ==========
 CLIENT_ID = "02232d5ee959c84e51196e9f1968b041"
 REDIRECT_URI = "http://127.0.0.1:5001/mal/callback"     # MAL sends the browser here after login
-TOKEN_FILE = os.path.join(app_data_dir(), "mal_tokens.json")
+MAL_TOKEN_PATH = os.path.join(appdata_dir(), "mal_tokens.json")
 
 _code_verifier = None   # random secret, remembered between start_login and handle_callback
 
 # ========== Helper ==========
 def get_token() -> Optional[Any]:
     try:
-        with open(TOKEN_FILE) as f:
+        with open(MAL_TOKEN_PATH) as f:
             return json.load(f)
         
     except FileNotFoundError as e:
@@ -79,8 +79,8 @@ def handle_callback(code: str) -> bool:
             timeout=10,
         )
         response.raise_for_status()
-        with open(TOKEN_FILE, "w") as f: json.dump(response.json(), f)
-        logger.info(f"MAL login successful; tokens saved to {app_data_dir}.")
+        with open(MAL_TOKEN_PATH, "w") as f: json.dump(response.json(), f)
+        logger.info(f"MAL login successful; tokens saved to {appdata_dir}.")
         return True
     
     except Exception as e:
@@ -110,7 +110,7 @@ def refresh_token() -> bool:
             timeout=10,
         )
         response.raise_for_status()
-        with open(TOKEN_FILE, "w") as f:
+        with open(MAL_TOKEN_PATH, "w") as f:
             json.dump(response.json(), f)   # new access + refresh token, overwrites old file
 
         logger.info(f"Successfully refresed MAL token!")
@@ -124,7 +124,7 @@ def refresh_token() -> bool:
 def logout() -> None:
     """Disconnect from MAL by deleting the saved tokens."""
     try:
-        os.remove(TOKEN_FILE)
+        os.remove(MAL_TOKEN_PATH)
         logger.info("MAL disconnected; tokens removed.")
 
     except FileNotFoundError:

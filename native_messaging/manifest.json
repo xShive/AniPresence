@@ -1,0 +1,9 @@
+{
+  "name": "anipresence_native_host",
+  "description": "Native Messaging service used by AniPresence",
+  "path": "..\\dist\\native_host.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://fgfhfdfhjnmhpkakabgeonffcjjhoeki/"
+  ]
+}

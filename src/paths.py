@@ -2,8 +2,11 @@
 import os
 
 # ========== Helper ==========
-def app_data_dir() -> str:
-    """Return %APPDATA%\\AniPresence (e.g. C:\\Users\\User\\AppData\\Roaming\\AniPresence)
+def appdata_dir() -> str:
+    """Return `%APPDATA%\\AniPresence`
+    
+    (`C:\\Users\\{name}\\AppData\\Roaming\\AniPresence`)
+
     Creates the folder if needed."""
     base = os.getenv("APPDATA")
     if base is None:

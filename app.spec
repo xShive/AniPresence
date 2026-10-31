@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['src\\rpc.py'],
+    ['src\\app.py'],
     pathex=['src'],
     binaries=[],
-    datas=[('assets', 'assets')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='rpc',
+    name='app',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

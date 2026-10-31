@@ -6,6 +6,9 @@
 //   2. relays iframe video data over to content.js in the top page
 // =====================================================================
 
+declare function importScripts(...urls: string[]): void;    // tell ts func exists
+importScripts("helpers.js", "local_api.js");
+
 // ========== Background fetches (to avoid local network popup) ==========
 // do the actual fetch (hit the Python API) and send the result back
 /**
@@ -19,7 +22,10 @@
  */
 async function doFetch(message: FetchMessage, sendResponse: (response: ResponseMessage) => void) {
     try {
-        const resp = await fetch(message.url, {
+        if (message.method !== "POST" || (message.url !== "/watching" && message.url !== "/stopped")) {
+            throw new Error("This background request is not allowed.");
+        }
+        const resp = await localFetch(message.url, {
             method: message.method,
             headers: message.headers,
             body: message.body ? JSON.stringify(message.body) : undefined,

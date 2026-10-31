@@ -1,4 +1,11 @@
+; required outputs: dist\app.exe, dist\native_host.exe, extension\*.js
+; helper manifest's name must match NativeHostName
+#define AppExe "app.exe"
+#define NativeHostName "anipresence_native_host"
+#define NativeManifest "native_host_manifest.json"
+
 [Setup]
+AppId=AniPresence
 AppName=AniPresence
 AppVersion=1.4.4
 DefaultDirName={autopf}\AniPresence
@@ -10,75 +17,65 @@ SolidCompression=yes
 SetupIconFile=assets\icon.ico
 UninstallDisplayIcon={app}\assets\icon.ico
 DisableDirPage=no
+CloseApplications=yes
+RestartApplications=no
 
 [Tasks]
 Name: "startup"; Description: "Start AniPresence automatically when Windows boots"; GroupDescription: "Options:"
 
 [Files]
-Source: "dist\rpc.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\native_host.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "native_messaging\manifest.json"; DestDir: "{app}"; DestName: "{#NativeManifest}"; Flags: ignoreversion; AfterInstall: ConfigureNativeManifest
 Source: "assets\icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
-Source: "extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs
+Source: "extension\*"; DestDir: "{app}\extension"; Excludes: "*.ts,*.map"; Flags: ignoreversion recursesubdirs
+
+[Registry]
+; register machine-wide because installation requires administrator privileges
+; uninstall removes only host key, not the browser's parent keys
+Root: HKLM32; Subkey: "Software\Google\Chrome\NativeMessagingHosts\{#NativeHostName}"; ValueType: string; ValueName: ""; ValueData: "{app}\{#NativeManifest}"; Flags: uninsdeletekey
+Root: HKLM32; Subkey: "Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\{#NativeHostName}"; ValueType: string; ValueName: ""; ValueData: "{app}\{#NativeManifest}"; Flags: uninsdeletekey
 
 [Icons]
-Name: "{commonprograms}\AniPresence"; Filename: "{app}\rpc.exe"; IconFilename: "{app}\assets\icon.ico"
+Name: "{commonprograms}\AniPresence"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
 Name: "{commonprograms}\Uninstall AniPresence"; Filename: "{uninstallexe}"
-Name: "{commonstartup}\AniPresence"; Filename: "{app}\rpc.exe"; Tasks: startup
+Name: "{commonstartup}\AniPresence"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: startup
 
 [Run]
-Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""AniPresence"" dir=in action=allow program=""{app}\rpc.exe"" enable=yes"; Flags: runhidden
-Filename: "{app}\rpc.exe"; Flags: nowait runhidden postinstall; Description: "Start AniPresence now"
-Filename: "explorer.exe"; Parameters: "{app}\extension"; Description: "Open extension folder"; Flags: postinstall skipifsilent shellexec
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""AniPresence"""; Flags: runhidden
+Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Flags: nowait runhidden postinstall runasoriginaluser skipifsilent; Description: "Start AniPresence now"
+Filename: "{sys}\explorer.exe"; Parameters: """{app}\extension"""; Description: "Open extension folder"; Flags: postinstall skipifsilent runasoriginaluser
 
 [UninstallRun]
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""AniPresence"""; Flags: runhidden
 
+[InstallDelete]
+; remove old executable (name change)
+Type: files; Name: "{app}\rpc.exe"
+
+; upgrade in place !! do not run old uninstaller
+
 [Code]
-var 
-  ResultCode: Integer;
-
-procedure RemoveOldInstallation();
+procedure ConfigureNativeManifest();
 var
-  UninstallerPath: String;
-  UninsResultCode: Integer;
+  ManifestPath: String;
+  Lines: TArrayOfString;
+  I, Replacements: Integer;
 begin
-  // 1. Remove the ancient "AnimeActivityTracker" (just in case they skip versions)
-  UninstallerPath := ExpandConstant('{autopf}\AnimeActivityTracker\unins000.exe');
-  if FileExists(UninstallerPath) then
-  begin
-    Exec(UninstallerPath, '/VERYSILENT /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, UninsResultCode);
-    Sleep(1000);
-  end;
+  { Modify only the installed copy, never the development source file. }
+  ManifestPath := ExpandConstant('{app}\{#NativeManifest}');
+  if not LoadStringsFromFile(ManifestPath, Lines) then
+    RaiseException('Could not read the installed native helper manifest.');
 
-  // 2. Remove the previous "AniPresence" version for a clean upgrade
-  UninstallerPath := ExpandConstant('{app}\unins000.exe');
-  if FileExists(UninstallerPath) then
-  begin
-    // The /_?= flag is critical here. It stops the uninstaller from copying itself to the Temp folder
-    // and running in the background. It forces Inno Setup to wait for it to finish deleting old files.
-    Exec(UninstallerPath, '/VERYSILENT /SUPPRESSMSGBOXES /_?=' + ExpandConstant('{app}'), '', SW_HIDE, ewWaitUntilTerminated, UninsResultCode);
-    Sleep(1000);
-  end;
-end;
+  Replacements := 0;
+  for I := 0 to GetArrayLength(Lines) - 1 do
+    Replacements := Replacements + StringChangeEx(
+      Lines[I], '"..\\dist\\native_host.exe"', '"native_host.exe"', True);
 
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssInstall then
-  begin
-    // Kill the running process BEFORE trying to uninstall
-    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM rpc.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Sleep(1000);
-    
-    // Now that it's dead, wipe the old files cleanly
-    RemoveOldInstallation();
-  end;
-end;
+  { Stop rather than silently install a manifest with an unexpected layout. }
+  if Replacements <> 1 then
+    RaiseException('The native helper manifest has an unexpected executable path.');
 
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-begin
-  if CurUninstallStep = usUninstall then
-  begin
-    // Kill the process when the user clicks "Uninstall" in Windows settings
-    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM rpc.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Sleep(1000);
-  end;
+  if not SaveStringsToUTF8FileWithoutBOM(ManifestPath, Lines, False) then
+    RaiseException('Could not save the installed native helper manifest.');
 end;

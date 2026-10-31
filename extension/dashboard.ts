@@ -160,8 +160,8 @@ async function loadLists() {
     // fetch new list in background (slow)
     try {
         const [animeResp, mangaResp] = await Promise.all([
-            fetch(`${LOCAL_URL}/mal/me/animelist`),
-            fetch(`${LOCAL_URL}/mal/me/mangalist`)
+            localFetch("/mal/me/animelist"),
+            localFetch("/mal/me/mangalist")
         ]);
         if (!animeResp.ok) {
             const errorData: { error?: string } | null = await animeResp.json().catch(() => null);
@@ -234,13 +234,13 @@ function renderPosters() {
 // hit api to fetch current data to fill in strip + check error
 async function loadStatus() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/status`);
+        const resp = await localFetch("/status");
         const status: LiveStatus = await resp.json();
         renderStrip(status);
         chrome.storage.local.set({ lastStatus: status});
         if (status.auto_progress_error) {
             showError(status.auto_progress_error, ((): Promise<Response> => {
-                return fetch(`${LOCAL_URL}/autoprogress/error/clear`, {
+                return localFetch("/autoprogress/error/clear", {
                     method: "POST",
                     headers: { "Content-Type": "application/json"}
                 });
@@ -716,7 +716,7 @@ async function pushUpdate() {
 // send an EntryUpdate to the python api (which forwards it to mal)
 async function updateStatus(status: EntryUpdate) {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/me/update/status`, {
+        const resp = await localFetch("/mal/me/update/status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(status),
@@ -760,13 +760,13 @@ function closeError() {
 async function loadAccount() {
     showTask("Loading account...");
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/me`).catch(() => {
-            throw new Error("The AniPresence app isn't running.")
-        }); 
-        const data = await resp.json();  
-        if (!resp.ok) {     // HTTP request failed
-            throw new Error(data.error);
+        const resp = await localFetch("/mal/me"); 
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => null);
+            throw new Error(data?.error || `${resp.status} ${resp.statusText}`);
         }
+
+        const data = await resp.json();
         userInfo = data;
         renderAccount();
     }
@@ -811,7 +811,7 @@ function closeAccount() {
 // connect: kick off MAL login (opens a browser tab via Python)
 async function connectMal() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/login`, { method: "GET" });
+        const resp = await localFetch("/mal/login");
 
         if (resp.status !== 204) {
             const data = await resp.json().catch(() => null);
@@ -826,7 +826,7 @@ async function connectMal() {
 // disconnect: drop the token, clear data, flip to the signed-out state
 async function disconnectMal() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/mal/logout`, { method: "POST" });
+        const resp = await localFetch("/mal/logout", { method: "POST" });
 
         if (resp.status !== 204) {
             const data = await resp.json().catch(() => null);
@@ -869,7 +869,7 @@ async function loadSettings() {
 
     // ghost state lives in /status
     try {
-        const resp = await fetch(`${LOCAL_URL}/status`);
+        const resp = await localFetch("/status");
         if (!resp.ok) {
             throw new Error(`${resp.status} ${resp.statusText}`);
         }
@@ -886,7 +886,7 @@ async function loadSettings() {
 async function checkUpdate() {
     try {
         updateBtn.textContent = "Checking...";
-        const response = await fetch(`${LOCAL_URL}/update`);
+        const response = await localFetch("/update");
         const data = await response.json();
         if (!response.ok) {
             throw new Error(data.error);
@@ -910,7 +910,7 @@ async function checkUpdate() {
 // flip ghost mode by hitting python api
 async function toggleGhost() {
     try {
-        const resp = await fetch(`${LOCAL_URL}/ghost`, { method: "POST" });
+        const resp = await localFetch("/ghost", { method: "POST" });
         const data = await resp.json();
         ghostSwitch.classList.toggle("on", data.ghost_mode);
         if (!resp.ok) {
@@ -925,7 +925,7 @@ async function toggleGhost() {
 async function toggleAutoProgress() {
     const enabled = !autoProgressSwitch.classList.contains("on");   // if u click it, u want the opposite of current state
     try {
-        const resp = await fetch(`${LOCAL_URL}/autoprogress`, {
+        const resp = await localFetch("/autoprogress", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ enabled, threshold: 85 })

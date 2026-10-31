@@ -11,11 +11,14 @@ from functools import wraps
 from log_setup import setup_logging
 from mal_auth import start_login, handle_callback, logout 
 from mal_api import get_animelist, get_mangalist, update_anime_status, get_my_info, get_mal_url, get_mal_cover
+from paths import appdata_dir
 
+import os
 import time
 import threading
 import logging
-import re
+import secrets
+import json
 
 # ========== Setup ==========
 logger = logging.getLogger(__name__)
@@ -29,6 +32,7 @@ auth = HTTPTokenAuth()
 
 # ========== Global Variables ==========
 APP_ID="1510673753871352070"
+AUTH_TOKEN_PATH = os.path.join(appdata_dir(), "local_api_token.txt")
 
 last_ping_time = time.time()
 is_presence_active = False
@@ -99,6 +103,7 @@ def not_ghost(func):
 
 # ========== Flask app - API endpoints ==========
 @app.route('/watching', methods=['POST'])
+@auth.login_required
 @not_ghost
 def watching():
     global last_ping_time, is_presence_active, is_paused_active, rpc_connected, rpc, current_title_and_number
@@ -127,7 +132,7 @@ def watching():
 
     anime_title = data.get('anime_title', '')
     episode_title = data.get('episode_title', '')
-    episode = data.get('episode', '').replace('.', '').strip()
+    episode = data.get('episode', '')
     episode_line = f"EP {episode}" if episode else ""
     cover = data.get('cover', '') or None
     current_time = data.get('current_time', '0:00')
@@ -219,7 +224,7 @@ def watching():
         if fraction * 100 >= auto_progress_threshold and (anime_title, episode_line) != last_marked_episode:
             try:
                 entry = find_in_list(anime_title, get_animelist() or [])
-                n = int(episode)
+                n = int(float(episode))
                 if entry and n > (entry.get("watched") or 0):       # check if current list entry episode is lower than currently watching
                     total = entry.get("num_episodes") or 0
                     is_completed = total > 0 and n >= total
@@ -245,6 +250,7 @@ def watching():
     return jsonify(), 204
 
 @app.route('/stopped', methods=['POST'])
+@auth.login_required
 def stopped():
     global is_presence_active, current_end_timestamp, last_episode, current_title_and_number, presence_clear_pending
     global current_anime_title, current_episode_line, current_episode_title, current_cover
@@ -284,6 +290,7 @@ def stopped():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/update', methods=['GET'])
+@auth.login_required
 def update():
     try:
         latest_version, download_url = check_for_updates()
@@ -293,6 +300,7 @@ def update():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/status', methods=['GET'])
+@auth.login_required
 def status():
     return jsonify({
         "is_watching": is_presence_active,
@@ -308,6 +316,7 @@ def status():
     })
 
 @app.route('/ghost', methods=['POST'])
+@auth.login_required
 def toggle_ghost():
     global ghost_mode, presence_clear_pending, rpc_connected
     ghost_mode = not ghost_mode
@@ -326,6 +335,7 @@ def toggle_ghost():
     return jsonify({ "ghost_mode": ghost_mode })
 
 @app.route("/mal/login", methods=["GET"])   # 'login' button in extension hits this
+@auth.login_required
 def mal_login():
     try:
         start_login()
@@ -346,6 +356,7 @@ def mal_callback():
     return "Login failed. Please try again."
 
 @app.route("/mal/logout", methods=["POST"])
+@auth.login_required
 def mal_logout():
     try:
         logout()
@@ -355,6 +366,7 @@ def mal_logout():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me", methods=['GET'])      # the extensgion should hit this when loading profile data
+@auth.login_required
 def mal_me():
     try:
         return jsonify(get_my_info())
@@ -362,6 +374,7 @@ def mal_me():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me/animelist", methods=['GET'])
+@auth.login_required
 def mal_animelist():
     try:
         return jsonify(get_animelist())
@@ -369,6 +382,7 @@ def mal_animelist():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me/mangalist", methods=['GET'])
+@auth.login_required
 def mal_mangalist():
     try:
         return jsonify(get_mangalist())
@@ -376,6 +390,7 @@ def mal_mangalist():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/mal/me/update/status", methods=['POST'])
+@auth.login_required
 def mal_update_anime_status():
     try:
         update_anime_status(request.get_json())
@@ -384,6 +399,7 @@ def mal_update_anime_status():
         return jsonify({"error": str(e)}), 500
     
 @app.route('/autoprogress', methods=['POST'])
+@auth.login_required
 def set_autoprogress():
     global auto_progress_enabled, auto_progress_threshold
     data = request.get_json()
@@ -392,10 +408,43 @@ def set_autoprogress():
     return jsonify({"enabled": auto_progress_enabled, "threshold": auto_progress_threshold})
 
 @app.route("/autoprogress/error/clear", methods=["POST"])
+@auth.login_required
 def clear_autoprogress_error():
     global pending_auto_progress_error
     pending_auto_progress_error = None
     return jsonify(), 204
+
+# ========== Local token ==========
+def get_local_api_token():
+    try:
+        with open(AUTH_TOKEN_PATH, "a+", encoding="utf-8") as f:
+            f.seek(0)   # a+ starts at EOF
+            
+            try:
+                content = json.load(f)
+            except json.JSONDecodeError:
+                content = None
+
+            if not content:
+                content = secrets.token_urlsafe(32)
+                f.seek(0)
+                f.truncate()    # wipe old stuff
+                json.dump(content, f)
+
+            return content
+                
+    except Exception as e:
+        logger.error(f"Could not manage token file at {AUTH_TOKEN_PATH}: {e}")
+        raise
+
+# auth takes callback, remembers it, calls it whenever it needs to verify
+@auth.verify_token
+def verify_local_api_token(token: str):
+    try:
+        return secrets.compare_digest(token, local_api_token)
+    except Exception as e:
+        return False
+
 
 # ========== Main ==========
 if __name__ == '__main__':
@@ -411,6 +460,9 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Initial Discord connection failed: {e}. Will retry on next browser update.")
         rpc_connected = False
+
+    # get local token
+    local_api_token = get_local_api_token()
 
     # thread 1: flask server listens for HTTP requests on port 5001 (daemon)
     threading.Thread(target=lambda: app.run(host='127.0.0.1', port=5001), daemon=True).start()

@@ -140,12 +140,12 @@ function bgFetch(
 
 // forward to bgFetch with /watching endpoint + data
 function sendData(data: ScrapedData): Promise<void> {
-    return bgFetch(`${LOCAL_URL}/watching`, "POST", data);
+    return bgFetch("/watching", "POST", data);
 }
 
 // forward to bgFetch with /stopped endpoint
 function sendStop(): Promise<void> {
-    return bgFetch(`${LOCAL_URL}/stopped`, "POST");
+    return bgFetch("/stopped", "POST");
 }
 
 // ========== Scraping loop ==========
