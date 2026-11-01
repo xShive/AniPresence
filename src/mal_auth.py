@@ -14,6 +14,7 @@ REDIRECT_URI = "http://127.0.0.1:5001/mal/callback"     # MAL sends the browser 
 MAL_TOKEN_PATH = os.path.join(appdata_dir(), "mal_tokens.json")
 
 _code_verifier = None   # random secret, remembered between start_login and handle_callback
+_oauth_state = None
 
 # ========== Helper ==========
 def get_token() -> Optional[Any]:
@@ -36,14 +37,16 @@ def start_login() -> bool:
     Returns:
         bool: True if the browser was opened, raises on failure.
     """
-    global _code_verifier
+    global _code_verifier, _oauth_state
     _code_verifier = secrets.token_urlsafe(64)      # the random secret (PKCE verifier)
+    _oauth_state = secrets.token_urlsafe(32)
     url = (
         "https://myanimelist.net/v1/oauth2/authorize"
         "?response_type=code"               # ask MAL for a temporary code, which we trade for the token
         f"&client_id={CLIENT_ID}"
         f"&code_challenge={_code_verifier}"
         "&code_challenge_method=plain"      # no hashing; the challenge equals the verifier
+        f"&state={_oauth_state}"
         f"&redirect_uri={REDIRECT_URI}"
     )
     try:
@@ -56,7 +59,7 @@ def start_login() -> bool:
         raise
 
 
-def handle_callback(code: str) -> bool:
+def handle_callback(code: str, state: str) -> bool:
     """Trade MAL's authorization code for the access + refresh tokens and save
     them to the appdata token file.
 
@@ -66,6 +69,13 @@ def handle_callback(code: str) -> bool:
     Returns:
         bool: True if tokens were fetched and saved, False on failure.
     """
+    global _oauth_state
+    if not _oauth_state or _oauth_state != state:
+        logger.error("State tokens don't match.")
+        return False
+
+    _oauth_state = None
+
     try:
         response = requests.post(
             "https://myanimelist.net/v1/oauth2/token",
@@ -78,6 +88,7 @@ def handle_callback(code: str) -> bool:
             },
             timeout=10,
         )
+
         response.raise_for_status()
         with open(MAL_TOKEN_PATH, "w") as f: json.dump(response.json(), f)
         logger.info(f"MAL login successful; tokens saved to {appdata_dir}.")

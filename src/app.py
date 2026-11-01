@@ -347,11 +347,16 @@ def mal_login():
 @app.route("/mal/callback", methods=['GET'])
 def mal_callback():
     code = request.args.get("code")
+    state = request.args.get("state")
     if code is None:
         logger.error("MAL callback was hit without a code")
         return "Login failed: no code received."
 
-    if handle_callback(code):
+    if state is None:
+        logger.error("MAL callback was hit without a state")
+        return "Login failed: no state received."
+
+    if handle_callback(code, state):
         return "Connected! You can close this tab."
     return "Login failed. Please try again."
 
