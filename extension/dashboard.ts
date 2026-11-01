@@ -265,6 +265,7 @@ function renderStrip(status: LiveStatus) {
     }
 
     // live playback (from the browser scrape, via Python)
+    stripCover.style.display = "";
     stripCover.src = status.cover ?? "";
     stripTitle.textContent = status.anime_title ?? "";
 

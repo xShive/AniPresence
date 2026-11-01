@@ -62,70 +62,72 @@ def get_animelist() -> Optional[list[Anime]]:
         if not tokens:
             return None
 
-        response = requests.get(
-            "https://api.myanimelist.net/v2/users/@me/animelist",
-            headers={"Authorization": "Bearer " + tokens["access_token"]},
-            params={
-                "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,tags},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
-                "limit": 1000,
-                "nsfw": "true"
-            },
-            timeout=10,
-        )
-        if response.status_code == 401:
-            refresh_token()
-            tokens = get_token()
-            if not tokens:
-                return None
-            
-            response = requests.get(
-                "https://api.myanimelist.net/v2/users/@me/animelist",
-                headers={"Authorization": "Bearer " + tokens["access_token"]},
-                params={
-                "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,tags},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
-                "limit": 1000,
-                "nsfw": "true"
-                },
-                timeout=10,
-            )
-        response.raise_for_status()
-
-        raw = response.json()
+        url = "https://api.myanimelist.net/v2/users/@me/animelist"
+        params={
+            "fields": "list_status{status,score,num_episodes_watched,is_rewatching,num_times_rewatched,tags},synopsis,rank,media_type,num_episodes,broadcast,mean,alternative_titles,status",
+            "limit": 1000,
+            "nsfw": "true"
+        }
         anime = []
 
-        for item in raw["data"]:
-            node   = item["node"]
-            status = item["list_status"] 
+        while url:
+            response = requests.get(
+                url,
+                headers={"Authorization": "Bearer " + tokens["access_token"]},
+                params=params,
+                timeout=10,
+            )
+            if response.status_code == 401:
+                refresh_token()
+                tokens = get_token()
+                if not tokens:
+                    return None
+                
+                response = requests.get(
+                    url,
+                    headers={"Authorization": "Bearer " + tokens["access_token"]},
+                    params=params,
+                    timeout=10,
+                )
+            response.raise_for_status()
+            raw = response.json()
 
-            anime.append({
-                "id":           node.get("id"),
-                "title":        node.get("title"),
-                "cover":        node.get("main_picture", {}).get("medium"),
-                "synopsis":     node.get("synopsis"),
-                "rank":         node.get("rank"),
-                "mean":         node.get("mean"),
-                "media_type":   node.get("media_type"),
-                "num_episodes": node.get("num_episodes"),
-                "broadcast":    node.get("broadcast"),
-                "title_en":     node.get("alternative_titles", {}).get("en"),
-                "title_ja":     node.get("alternative_titles", {}).get("ja"),
-                "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
-                "airing_status":node.get("status"),
+            for item in raw["data"]:
+                node   = item["node"]
+                status = item["list_status"] 
 
-                "status":       status.get("status"),
-                "score":        status.get("score"),
-                "watched":      status.get("num_episodes_watched"),
-                "is_rewatching": status.get("is_rewatching"),
-                "num_times_rewatched": status.get("num_times_rewatched"),
-                "tags":         status.get("tags"),
-            })
+                anime.append({
+                    "id":           node.get("id"),
+                    "title":        node.get("title"),
+                    "cover":        node.get("main_picture", {}).get("medium"),
+                    "synopsis":     node.get("synopsis"),
+                    "rank":         node.get("rank"),
+                    "mean":         node.get("mean"),
+                    "media_type":   node.get("media_type"),
+                    "num_episodes": node.get("num_episodes"),
+                    "broadcast":    node.get("broadcast"),
+                    "title_en":     node.get("alternative_titles", {}).get("en"),
+                    "title_ja":     node.get("alternative_titles", {}).get("ja"),
+                    "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
+                    "airing_status":node.get("status"),
+
+                    "status":       status.get("status"),
+                    "score":        status.get("score"),
+                    "watched":      status.get("num_episodes_watched"),
+                    "is_rewatching": status.get("is_rewatching"),
+                    "num_times_rewatched": status.get("num_times_rewatched"),
+                    "tags":         status.get("tags"),
+                })
+
+            url = raw.get("paging", {}).get("next")
+            params = None
 
         return anime
 
     except Exception as e:
         logger.error(f"Could not fetch MAL animelist: {e}")
         raise
-    
+        
 
 def get_mangalist() -> Optional[list[Manga]]:
     """Same as `get_animelist` but with different fields, reserved for manga.
@@ -138,65 +140,70 @@ def get_mangalist() -> Optional[list[Manga]]:
         if not tokens:
             return None
 
-        response = requests.get(
-            "https://api.myanimelist.net/v2/users/@me/mangalist",
-            headers={"Authorization": "Bearer " + tokens["access_token"]},
-            params={
-                "fields": "list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,num_times_reread,tags},synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
-                "limit": 1000,
-                "nsfw": "true"
-            },
-            timeout=10,
-        )
-        if response.status_code == 401:
-            refresh_token()
-            tokens = get_token()
-            if not tokens:
-                return None
-            
-            response = requests.get(
-                "https://api.myanimelist.net/v2/users/@me/mangalist",
-                headers={"Authorization": "Bearer " + tokens["access_token"]},
-                params={
-                "fields": "list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,num_times_reread,tags},synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
-                "limit": 1000,
-                "nsfw": "true"
-                },
-                timeout=10,
-            )
-        response.raise_for_status()
-
-        raw = response.json()
+        
+        url = "https://api.myanimelist.net/v2/users/@me/mangalist"
+        params={
+            "fields": "list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,num_times_reread,tags},synopsis,rank,media_type,num_volumes,num_chapters,mean,alternative_titles",
+            "limit": 1000,
+            "nsfw": "true"
+        }
         manga = []
 
-        for item in raw["data"]:
-            node   = item["node"]
-            status = item["list_status"] 
+        while url:
 
-            manga.append({
-                "id":           node.get("id"),
-                "title":        node.get("title"),
-                "cover":        node.get("main_picture", {}).get("medium"),
-                "synopsis":     node.get("synopsis"),
-                "rank":         node.get("rank"),
-                "mean":         node.get("mean"),
-                "media_type":   node.get("media_type"),
-                "num_volumes":  node.get("num_volumes"),
-                "num_chapters": node.get("num_chapters"),
-                "title_en":     node.get("alternative_titles", {}).get("en"),
-                "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
+            response = requests.get(
+                url,
+                headers={"Authorization": "Bearer " + tokens["access_token"]},
+                params=params,
+                timeout=10
+            )
+            if response.status_code == 401:
+                refresh_token()
+                tokens = get_token()
+                if not tokens:
+                    return None
+                
+                response = requests.get(
+                    url,
+                    headers={"Authorization": "Bearer " + tokens["access_token"]},
+                    params=params,
+                    timeout=10
+                )
+            response.raise_for_status()
 
-                "status":       status.get("status"),
-                "score":        status.get("score"),
-                "volumes_read": status.get("num_volumes_read"),
-                "chapters_read":status.get("num_chapters_read"),
-                "is_rereading": status.get("is_rereading"),
-                "num_times_reread": status.get("num_times_reread"),
-                "tags":         status.get("tags"),
-            })
+            raw = response.json()
+
+            for item in raw["data"]:
+                node   = item["node"]
+                status = item["list_status"] 
+
+                manga.append({
+                    "id":           node.get("id"),
+                    "title":        node.get("title"),
+                    "cover":        node.get("main_picture", {}).get("medium"),
+                    "synopsis":     node.get("synopsis"),
+                    "rank":         node.get("rank"),
+                    "mean":         node.get("mean"),
+                    "media_type":   node.get("media_type"),
+                    "num_volumes":  node.get("num_volumes"),
+                    "num_chapters": node.get("num_chapters"),
+                    "title_en":     node.get("alternative_titles", {}).get("en"),
+                    "synonyms":     node.get("alternative_titles", {}).get("synonyms", []),
+
+                    "status":       status.get("status"),
+                    "score":        status.get("score"),
+                    "volumes_read": status.get("num_volumes_read"),
+                    "chapters_read":status.get("num_chapters_read"),
+                    "is_rereading": status.get("is_rereading"),
+                    "num_times_reread": status.get("num_times_reread"),
+                    "tags":         status.get("tags"),
+                })
+
+            url = raw.get("paging", {}).get("next")
+            params = None
 
         return manga
-    
+        
     except Exception as e:
         logger.error(f"Could not fetch MAL mangalist: {e}")
         raise
