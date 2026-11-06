@@ -494,78 +494,93 @@ function closeDetail() {
 
 // ========== detail modal: edits ==========
 /**
- * Changes the episode/chapter count immediately, then awaits saving to MAL.
- * On failure, restores the old object fields AND the old visible text.
+ * Changes episode/chapter progress and saves only the affected fields.
  *
- * The +/- button calls this directly: unlike a dropdown option, it has not
- * changed any text before this function starts. Both old labels can therefore
- * be read directly from the HTML before editing.
+ * Reaching the total marks the entry completed. Finishing an anime rewatch
+ * also increments its rewatch count and turns off the rewatch flag.
  *
- * Reaching the end also changes status; finishing a rewatch additionally changes
- * is_rewatching and num_times_rewatched. All of these need rollback, not just progress.
- * updateStatus() displays the error and rethrows; this function handles restoring state.
+ * If saving fails, restores the previous data and visible labels.
  *
- * @param delta - +1 or -1
+ * @param delta - Progress adjustment, normally +1 or -1.
  */
 async function changeProgress(delta: number) {
     if (!currentDetailItem) return;
+
     const item = currentDetailItem;
     const isManga = "num_chapters" in item;
 
-    // Remember old data
-    const fallback_status = item.status;
-    const fallback_progress_value = isManga
-    ? (item as Manga).chapters_read
-    : (item as Anime).watched;
+    const total = (
+        isManga ? (item as Manga).num_chapters : (item as Anime).num_episodes
+    ) || 0;
+
+    const current = (
+        isManga ? (item as Manga).chapters_read : (item as Anime).watched
+    ) || 0;
+
+    // keep progress within range
+    let next = Math.max(0, current + delta);
+    if (total) next = Math.min(next, total);
+    if (next === current) return;
+
     const progressTextEl = detailProgress;
     const statusTextEl = detailStatusDd.querySelector(".dropdown-text");
-    const fallback_progress_text = progressTextEl.textContent;
-    const fallback_status_text = statusTextEl.textContent; // Includes wording such as "Rewatch #1"
+
+    // remember old data if saving fails
+    const fallback_status = item.status;
+    const fallback_progress_value = isManga
+        ? (item as Manga).chapters_read
+        : (item as Anime).watched;
     const fallback_is_rewatching = (item as Anime).is_rewatching;
     const fallback_rewatch_count = (item as Anime).num_times_rewatched;
+    const fallback_progress_text = progressTextEl.textContent;
+    const fallback_status_text = statusTextEl.textContent;
 
-    const total   = (isManga ? (item as Manga).num_chapters : (item as Anime).num_episodes) || 0;
-    const current = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
+    // save progress (to only update specific fields)
+    const changes: Omit<EntryUpdate, "id" | "is_manga"> = {
+        progress: next
+    };
 
-    let next = current + delta;
-    if (next < 0) next = 0;                     // can't go below 0
-    if (total && next > total) next = total;    // can't exceed the total (only if the total is known)
-    if (next === current) return;               // nothing changed -> don't bother MAL
-
-    // apply locally
-    if (isManga) { (item as Manga).chapters_read = next; }
-    else         { (item as Anime).watched = next; }
-
-    detailProgress.textContent = `${next} / ${total || "?"}`;   // update the screen right away
-
-    // reaching the last episode/chapter auto-marks it completed
-    if (total && next === total && item.status !== "completed") {
-        item.status = "completed";
-        detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";   // reflect it in the dropdown too
+    if (isManga) {
+        (item as Manga).chapters_read = next;
+    } else {
+        (item as Anime).watched = next;
     }
+    progressTextEl.textContent = `${next} / ${total || "?"}`;
 
-    // finishing a rewatch: reached the end while rewatching -> bump the count + turn rewatching off
-    if (total && next === total && (item as Anime).is_rewatching) {
-        (item as Anime).num_times_rewatched = ((item as Anime).num_times_rewatched ?? 0) + 1;
-        (item as Anime).is_rewatching = false;
-        detailStatusDd.querySelector(".dropdown-text").textContent = "Completed";
+    if (total && next === total) {
+        if (item.status !== "completed") {
+            item.status = "completed";
+            changes.target_status = "completed";
+            statusTextEl.textContent = "Completed";
+        }
+
+        if (!isManga && (item as Anime).is_rewatching) {
+            const anime = item as Anime;
+            anime.num_times_rewatched = (anime.num_times_rewatched ?? 0) + 1;
+            anime.is_rewatching = false;
+
+            changes.num_times_rewatched = anime.num_times_rewatched;
+            changes.is_rewatching = false;
+            statusTextEl.textContent = "Completed";
+        }
     }
 
     try {
-        await pushUpdate();
-    }
-    catch (error) {
+        await pushUpdate(changes);
+    } catch (error) {
+        // restore to fallback
         item.status = fallback_status;
 
         if (isManga) {
             (item as Manga).chapters_read = fallback_progress_value;
         } else {
-            (item as Anime).watched = fallback_progress_value;
-            (item as Anime).is_rewatching = fallback_is_rewatching;
-            (item as Anime).num_times_rewatched = fallback_rewatch_count;
+            const anime = item as Anime;
+            anime.watched = fallback_progress_value;
+            anime.is_rewatching = fallback_is_rewatching;
+            anime.num_times_rewatched = fallback_rewatch_count;
         }
 
-        // check if user already swapped screens
+        // restore fallback labels if modal is still open
         if (currentDetailItem === item) {
             progressTextEl.textContent = fallback_progress_text;
             statusTextEl.textContent = fallback_status_text;
@@ -608,8 +623,21 @@ async function onStatusPick(value: string, previousLabel: string | null) {
     }
 
     try {
-        await pushUpdate();
+        const changes: Omit<EntryUpdate, "id" | "is_manga"> = {
+            target_status: item.status
+        };
+
+        if (!("num_chapters" in item)) {
+            changes.is_rewatching = item.is_rewatching;
+        }
+
+        if (value === "rewatching") {
+            changes.progress = 0;
+        }
+
+        await pushUpdate(changes);
     }
+    
     catch (error) {
         item.status = fallback_status;
         item.is_rewatching = fallback_is_rewatching;
@@ -640,7 +668,7 @@ async function onScorePick(value: string, previousLabel: string | null) {
     // Change local object (button label already changed in dropdown())
     item.score = Number(value);
     try {
-        await pushUpdate();
+        await pushUpdate({ score: item.score });
     }
     catch (error) {
         item.score = fallback_score;
@@ -665,12 +693,10 @@ function closeDropdownsOnOutsideClick(event: MouseEvent) {
 
 // ========== detail modal: build + send the update ==========
 /**
- * build a slim EntryUpdate from currentDetailItem (only what mal writes: id, status,
- * progress, score, plus anime rewatch fields) and send it to python -> mal. also
- * writes the edit back into the live list + cache so the grid and reopen stay in sync.
- * every edit (episodes, status, score) funnels through here.
+ * build EntryUpdate from currentDetailItem (only what mal writes: id, status,
+ * progress, score, anime rewatch fields)
  */
-async function pushUpdate() {
+async function pushUpdate(changes: Omit<EntryUpdate, "id" | "is_manga">) {
     if (!currentDetailItem) return;
 
     // avoid sending another update
@@ -678,17 +704,12 @@ async function pushUpdate() {
 
     const item = currentDetailItem;
     const isManga = "num_chapters" in item;
-    const progress = (isManga ? (item as Manga).chapters_read : (item as Anime).watched) || 0;
 
     try {
         await updateStatus({
             is_manga: isManga,
             id: item.id,
-            target_status: item.status,
-            progress: progress,
-            score: item.score,
-            is_rewatching: isManga ? undefined : ((item as Anime).is_rewatching ?? false),      // undefined: JSON.jsonify removes these entries. null: python sees as None
-            num_times_rewatched: isManga ? undefined : ((item as Anime).num_times_rewatched ?? 0),
+            ...changes,
         });
     }
     catch (error) {

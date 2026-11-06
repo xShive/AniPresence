@@ -60,7 +60,7 @@ def timeout_monitor():
     Every 15 seconds content.js sends a /watching ping. last_ping_time records the time of the last ping.
     The timeout_monitor thread wakes up every 5 seconds to check if it has been more than 25 seconds.
     """
-    global last_ping_time, is_presence_active, is_paused_active, rpc_connected, rpc, presence_clear_pending
+    global last_ping_time, is_presence_active, rpc_connected, rpc, presence_clear_pending
     while True:
         time.sleep(5)
 

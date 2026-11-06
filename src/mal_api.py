@@ -230,15 +230,17 @@ def update_anime_status(raw: dict) -> dict:
         anime_manga = "manga" if raw["is_manga"] else "anime"
         id = raw["id"]
         progress_field = "num_chapters_read" if raw["is_manga"] else "num_watched_episodes"
-        data = {        # MAL formatted dict
-            "status": raw["target_status"],
-            "score": raw["score"],
-            progress_field: raw["progress"]
-        }
-        # anime rewatching
-        if raw.get("is_rewatching") is not None:
+        data = {}
+
+        if "target_status" in raw:
+            data["status"] = raw["target_status"]
+        if "score" in raw:
+            data["score"] = raw["score"]
+        if "progress" in raw:
+            data[progress_field] = raw["progress"]
+        if "is_rewatching" in raw:
             data["is_rewatching"] = "true" if raw["is_rewatching"] else "false"
-        if raw.get("num_times_rewatched") is not None:
+        if "num_times_rewatched" in raw:
             data["num_times_rewatched"] = raw["num_times_rewatched"]
         
         response = requests.patch(
