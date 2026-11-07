@@ -233,7 +233,6 @@ def watching():
                     
                     update_anime_status({
                         "is_manga": False,
-                        "id": entry["id"],
                         "target_status": "completed" if (is_completed or entry["status"] == "completed") else "watching",
                         "score": entry["score"],
                         "progress": n,

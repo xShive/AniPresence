@@ -721,7 +721,7 @@ async function pushUpdate(changes: Omit<EntryUpdate, "id" | "is_manga">) {
 
     // if loadlists() finishes while having detail modal open, currentDetailItem
     // will point to the OLD fullList. so if u change score, close, open again,
-    // it'll say the old score cuz
+    // it'll say the old score cuz currentDetailItem has changed
     const list: (Anime | Manga)[] = isManga ? fullMangaList : fullAnimeList;
     for (let i = 0; i < list.length; i++) {
         if (list[i].id === item.id) {
