@@ -239,8 +239,8 @@ def watching():
                         "is_rewatching": False if is_completed else is_rewatching,
                         "num_times_rewatched": times_rewatched + 1 if (is_completed and is_rewatching) else times_rewatched
                     })
-                    last_marked_episode = (anime_title, episode_line)
                     logger.info(f"Auto-progress: {anime_title} -> ep {n}")
+                last_marked_episode = (anime_title, episode_line)
                     
             except Exception as e:
                 logger.error(f"Auto-progress failed: {e}")
