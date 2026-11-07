@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, NotRequired
 
 
 class BaseMedia(TypedDict):
@@ -36,3 +36,13 @@ class Manga(BaseMedia):
     num_chapters: int | None
     volumes_read: int | None
     chapters_read: int | None
+
+
+class EntryUpdate(TypedDict):
+    is_manga: bool
+    id: int
+    target_status: NotRequired[str]
+    progress: NotRequired[int]
+    score: NotRequired[int]
+    is_rewatching: NotRequired[bool]
+    num_times_rewatched: NotRequired[int]

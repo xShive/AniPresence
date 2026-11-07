@@ -232,9 +232,9 @@ def watching():
                     times_rewatched = entry.get("num_times_rewatched") or 0
                     
                     update_anime_status({
+                        "id": entry["id"],
                         "is_manga": False,
                         "target_status": "completed" if (is_completed or entry["status"] == "completed") else "watching",
-                        "score": entry["score"],
                         "progress": n,
                         "is_rewatching": False if is_completed else is_rewatching,
                         "num_times_rewatched": times_rewatched + 1 if (is_completed and is_rewatching) else times_rewatched

@@ -3,7 +3,7 @@
 # ========== Imports ==========
 import requests, logging
 from mal_auth import get_token, refresh_token
-from my_types import Anime, Manga
+from my_types import Anime, Manga, EntryUpdate
 from typing import Any, Optional
 from urllib.parse import quote_plus
 
@@ -209,7 +209,7 @@ def get_mangalist() -> Optional[list[Manga]]:
         raise
     
 
-def update_anime_status(raw: dict) -> dict:
+def update_anime_status(raw: EntryUpdate) -> dict:
     """Write an updated entry back to MAL (PATCH my_list_status).
 
     Builds MAL's expected field names from EntryUpdate dict (e.g.
