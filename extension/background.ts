@@ -8,6 +8,7 @@
 
 declare function importScripts(...urls: string[]): void;    // tell ts func exists
 importScripts("helpers.js", "local_api.js");
+var activeTabId = null;
 
 // ========== Background fetches (to avoid local network popup) ==========
 // do the actual fetch (hit the Python API) and send the result back
@@ -56,8 +57,27 @@ async function doFetch(message: FetchMessage, sendResponse: (response: ResponseM
  */   
 function handleMessage(message: FetchMessage | VideoData, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) {
     if (message.type === "fetch") {
-        doFetch(message, sendResponse);
-        return true;    // dont close msg yet (this executes before doFetch finishes)
+        if (message.url.includes("/stopped")) {
+            // wrong tab sending stopped
+            if (sender.tab.id !== activeTabId) {
+                sendResponse({ ok: true });
+                return;
+            }
+            // right tab sending stopped
+            doFetch(message, sendResponse)
+            activeTabId = null;
+            return true;
+        }
+        // /watching
+        chrome.tabs.query({ active: true, lastFocusedWindow: true}, (tabs) => {
+            if (sender.tab.id !== tabs[0]?.id) {
+                sendResponse({ ok: true });
+                return;
+            }
+            activeTabId = sender.tab.id;
+            doFetch(message, sendResponse);
+        })
+        return true;
     }
     if (message.type === "video_data") {
         chrome.tabs.sendMessage(sender.tab!.id!, message, {frameId: 0}   
