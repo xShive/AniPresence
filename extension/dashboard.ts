@@ -719,14 +719,40 @@ async function pushUpdate(changes: Omit<EntryUpdate, "id" | "is_manga">) {
         detailStats.classList.remove("saving");
     }
 
-    // bug: you click card from the cache array, so currentDetailItem points into it. (cuz MAL is still fetching)
-    // then mal fetch finishes and does fullAnimeList = the new mal array
-    // + edits the cache array's object, but the save in pushUpdate below saves fullAnimeList = the mal array,
-    // which never got edit -> cache ends up with mal's old number
+    // if loadlists() finishes while having detail modal open, currentDetailItem
+    // will point to the OLD fullList. so if u change score, close, open again,
+    // it'll say the old score cuz
     const list: (Anime | Manga)[] = isManga ? fullMangaList : fullAnimeList;
     for (let i = 0; i < list.length; i++) {
         if (list[i].id === item.id) {
-            list[i] = item;         // item = from cache // list = new
+            const entry = list[i];
+
+            if (changes.score !== undefined) {
+                entry.score = changes.score;
+            }
+
+            if (changes.target_status !== undefined) {
+                entry.status = changes.target_status;
+            }
+
+            if (changes.progress !== undefined) {
+                if (isManga) {
+                    (entry as Manga).chapters_read = changes.progress;
+                } else {
+                    (entry as Anime).watched = changes.progress;
+                }
+            }
+
+            if (!isManga) {
+                if (changes.is_rewatching !== undefined) {
+                    (entry as Anime).is_rewatching = changes.is_rewatching;
+                }
+
+                if (changes.num_times_rewatched !== undefined) {
+                    (entry as Anime).num_times_rewatched = changes.num_times_rewatched;
+                }
+            }
+
             break;
         }
     }
