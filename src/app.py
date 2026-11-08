@@ -54,6 +54,8 @@ auto_progress_threshold = 85
 last_marked_episode = None
 pending_auto_progress_error: str | None = None
 
+rpc_lock = threading.Lock()
+
 # ========== Heartbeat Timeout Logic =========
 def timeout_monitor():
     """
@@ -69,42 +71,32 @@ def timeout_monitor():
             presence_clear_pending = True
 
         if presence_clear_pending:
-            if not rpc_connected:
+            with rpc_lock:
+                if not rpc_connected:
+                    try:
+                        rpc = Presence(APP_ID)
+                        rpc.connect()
+                        rpc_connected = True
+                        logger.info("Successfully reconnected to Discord's RPC socket.")
+                        
+                    except Exception as e:
+                        logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
+                        continue
+
+                logger.info("Browser tab closed! Clearing Discord presence.")
                 try:
-                    rpc = Presence(APP_ID)
-                    rpc.connect()
-                    rpc_connected = True
-                    logger.info("Successfully reconnected to Discord's RPC socket.")
-                    
+                    rpc.clear()
+                    presence_clear_pending = False
+                    is_presence_active = False
+
                 except Exception as e:
-                    logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
-                    continue
+                    rpc_connected = False
+                    logger.error(f"Discord's RPC socket failed: {e}.\nA reconnect attempt will trigger shortly.")
 
-            logger.info("Browser tab closed! Clearing Discord presence.")
-            try:
-                rpc.clear()
-                presence_clear_pending = False
-                is_presence_active = False
-
-            except Exception as e:
-                rpc_connected = False
-                logger.error(f"Discord's RPC socket failed: {e}.\nA reconnect attempt will trigger shortly.")
-
-
-# ========== Decorator ==========
-# if two endpoints use the decorator, both endpoints will be named wrapper (prevent)
-def not_ghost(func):
-    @wraps(func)
-    def wrapper():
-        if ghost_mode:
-            return jsonify(), 204
-        return func()
-    return wrapper
 
 # ========== Flask app - API endpoints ==========
 @app.route('/watching', methods=['POST'])
 @auth.login_required
-@not_ghost
 def watching():
     global last_ping_time, is_presence_active, is_paused_active, rpc_connected, rpc, current_title_and_number
     global current_end_timestamp, last_episode
@@ -118,15 +110,16 @@ def watching():
 
     # reconnect rpc if needed
     if not rpc_connected:
-        try:
-            rpc = Presence(APP_ID)
-            rpc.connect()
-            rpc_connected = True
-            current_end_timestamp = None
-            logger.info("Successfully reconnected to Discord's RPC socket.")
-            
-        except Exception as e:
-            logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
+        with rpc_lock:
+            try:
+                rpc = Presence(APP_ID)
+                rpc.connect()
+                rpc_connected = True
+                current_end_timestamp = None
+                logger.info("Successfully reconnected to Discord's RPC socket.")
+                
+            except Exception as e:
+                logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
 
     data = request.get_json()
 
@@ -155,62 +148,65 @@ def watching():
     last_episode = episode_line
 
     try:
-        # if video player is blocked (crunchyroll not subscribed)
-        if not current_time or not duration:
-            seconds_remaining = 0
-        else:
-            seconds_remaining = time_to_seconds(duration) - time_to_seconds(current_time)
+        with rpc_lock:
+            if ghost_mode:
+                return jsonify(), 204
+            # if video player is blocked (crunchyroll not subscribed)
+            if not current_time or not duration:
+                seconds_remaining = 0
+            else:
+                seconds_remaining = time_to_seconds(duration) - time_to_seconds(current_time)
 
-        # Is the video finished?
-        if seconds_remaining <= 0 and duration not in ("", "0:00"):
-            if current_end_timestamp is not None:
-                current_end_timestamp = None
-                rpc.clear()     # erase countdown, only first time when 0 remaining
+            # Is the video finished?
+            if seconds_remaining <= 0 and duration not in ("", "0:00"):
+                if current_end_timestamp is not None:
+                    current_end_timestamp = None
+                    rpc.clear()     # erase countdown, only first time when 0 remaining
 
-            rpc.update(
-                activity_type=ActivityType.WATCHING,
-                details=anime_title_and_number,
-                state="✓ Finished!",
-                large_image=mal_cover,
-                buttons=[{"label": "View on MAL", "url": mal_url}]
-            )
+                rpc.update(
+                    activity_type=ActivityType.WATCHING,
+                    details=anime_title_and_number,
+                    state="✓ Finished!",
+                    large_image=mal_cover,
+                    buttons=[{"label": "View on MAL", "url": mal_url}]
+                )
 
-        # Is it paused?
-        elif paused:
-            if not is_paused_active:
-                is_paused_active = True
-                current_end_timestamp = None
-                rpc.clear()
+            # Is it paused?
+            elif paused:
+                if not is_paused_active:
+                    is_paused_active = True
+                    current_end_timestamp = None
+                    rpc.clear()
 
-            rpc.update(
-                activity_type=ActivityType.WATCHING,
-                details=anime_title_and_number,
-                state="⏸ Paused",
-                large_image=mal_cover,
-                buttons=[{"label": "View on MAL", "url": mal_url}]
-            )
+                rpc.update(
+                    activity_type=ActivityType.WATCHING,
+                    details=anime_title_and_number,
+                    state="⏸ Paused",
+                    large_image=mal_cover,
+                    buttons=[{"label": "View on MAL", "url": mal_url}]
+                )
 
-        # 3. It is playing normally
-        else:
-            is_paused_active = False
-            new_end_timestamp = int(time.time()) + seconds_remaining
-            start_timestamp = int(time.time()) - time_to_seconds(current_time)
+            # 3. It is playing normally
+            else:
+                is_paused_active = False
+                new_end_timestamp = int(time.time()) + seconds_remaining
+                start_timestamp = int(time.time()) - time_to_seconds(current_time)
 
-            
-            if current_end_timestamp is None or episode_changed or abs(current_end_timestamp - new_end_timestamp) > 3:
-                current_end_timestamp = new_end_timestamp
-            
-            current_title_and_number = anime_title_and_number
+                
+                if current_end_timestamp is None or episode_changed or abs(current_end_timestamp - new_end_timestamp) > 3:
+                    current_end_timestamp = new_end_timestamp
+                
+                current_title_and_number = anime_title_and_number
 
-            rpc.update(
-                activity_type=ActivityType.WATCHING,
-                details=anime_title_and_number,
-                state=episode_title if episode_title else None,
-                large_image=mal_cover,
-                start=start_timestamp,
-                end=current_end_timestamp,
-                buttons=[{"label": "View on MAL", "url": mal_url}]
-            )
+                rpc.update(
+                    activity_type=ActivityType.WATCHING,
+                    details=anime_title_and_number,
+                    state=episode_title if episode_title else None,
+                    large_image=mal_cover,
+                    start=start_timestamp,
+                    end=current_end_timestamp,
+                    buttons=[{"label": "View on MAL", "url": mal_url}]
+                )
 
     except Exception as e:
         rpc_connected = False
@@ -254,39 +250,40 @@ def stopped():
     global is_presence_active, current_end_timestamp, last_episode, current_title_and_number, presence_clear_pending
     global current_anime_title, current_episode_line, current_episode_title, current_cover
     global rpc_connected, rpc
-    is_presence_active = False
-    presence_clear_pending = True
-    current_end_timestamp = None
-    last_episode = None
-    current_title_and_number = None
-    current_anime_title = None
-    current_episode_line = None
-    current_episode_title = None
-    current_cover = None
+    with rpc_lock:
+        is_presence_active = False
+        presence_clear_pending = True
+        current_end_timestamp = None
+        last_episode = None
+        current_title_and_number = None
+        current_anime_title = None
+        current_episode_line = None
+        current_episode_title = None
+        current_cover = None
 
-    # reconnect rpc if needed
-    if not rpc_connected:
+        # reconnect rpc if needed
+        if not rpc_connected:
+            try:
+                rpc = Presence(APP_ID)
+                rpc.connect()
+                rpc_connected = True
+                current_end_timestamp = None
+                logger.info("Successfully reconnected to Discord's RPC socket.")
+                
+            except Exception as e:
+                logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
+                return jsonify({"error": str(e)}), 500
+
         try:
-            rpc = Presence(APP_ID)
-            rpc.connect()
-            rpc_connected = True
-            current_end_timestamp = None
-            logger.info("Successfully reconnected to Discord's RPC socket.")
-            
+            rpc.clear()
+            logger.info("Presence cleared.")
+            presence_clear_pending = False
+            return jsonify(), 204
+
         except Exception as e:
-            logger.error(f"Failed reconnecting to Discord's RPC socket: {e}")
+            rpc_connected = False
+            logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
             return jsonify({"error": str(e)}), 500
-
-    try:
-        rpc.clear()
-        logger.info("Presence cleared.")
-        presence_clear_pending = False
-        return jsonify(), 204
-
-    except Exception as e:
-        rpc_connected = False
-        logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/update', methods=['GET'])
 @auth.login_required
@@ -317,19 +314,20 @@ def status():
 @app.route('/ghost', methods=['POST'])
 @auth.login_required
 def toggle_ghost():
-    global ghost_mode, presence_clear_pending, rpc_connected
-    ghost_mode = not ghost_mode
-    if ghost_mode:
-        try:
-            presence_clear_pending = True
-            rpc.clear()
-            presence_clear_pending = False
-        except Exception as e:
-            rpc_connected = False
-            logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
-            return jsonify({ "ghost_mode": ghost_mode,
-                             "error": f"Ghost mode enabled, but couldn't clear your Discord status: {e}"
-                             }), 500
+    global ghost_mode, presence_clear_pending, rpc_connected, rpc_lock
+    with rpc_lock:
+        ghost_mode = not ghost_mode
+        if ghost_mode:
+            try:
+                presence_clear_pending = True
+                rpc.clear()
+                presence_clear_pending = False
+            except Exception as e:
+                rpc_connected = False
+                logger.error(f"Discord's RPC socket failed: {e} Couldn't clear status.")
+                return jsonify({ "ghost_mode": ghost_mode,
+                                "error": f"Ghost mode enabled, but couldn't clear your Discord status: {e}"
+                                }), 500
             
     return jsonify({ "ghost_mode": ghost_mode })
 
