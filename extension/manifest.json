@@ -32,6 +32,7 @@
         "https://animepahe.pw/*",
         "https://kwik.cx/*",
         "https://strm.cx/*",
+        "https://megaplay.buzz/*",
         "http://127.0.0.1:5001/*"
     ],
 
@@ -50,7 +51,7 @@
             "js": ["helpers.js", "config.js", "content.js"]
         },
         {
-            "matches": ["https://kwik.cx/*", "https://strm.cx/*"],
+            "matches": ["https://kwik.cx/*", "https://strm.cx/*", "https://megaplay.buzz/*"],
             "js": ["helpers.js", "iframes.js"],
             "all_frames": true
         }
