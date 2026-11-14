@@ -1,0 +1,13 @@
+.popup { width: min(100%, 480px); margin: 0 auto; padding: 24px; }
+h1 { margin: 0 0 24px; font-size: 28px; }
+h2 { margin: 0 0 20px; font-size: 20px; }
+.entry { padding: 24px; background: white; border-radius: 16px; box-shadow: 0 4px 18px #22234b10; }
+.progress-control { display: flex; align-items: center; gap: 20px; }
+.progress-control span { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+.progress-control button {
+  width: 40px; height: 40px; border: 0; border-radius: 12px;
+  background: #dcdaf0; color: #29264f; font: inherit; font-size: 24px; cursor: pointer;
+}
+.progress-control button:disabled { opacity: .4; cursor: default; }
+.progress-control button:focus-visible { outline: 2px solid #57518b; outline-offset: 3px; }
+.preview-note { color: #666278; font-size: 13px; line-height: 1.5; }
